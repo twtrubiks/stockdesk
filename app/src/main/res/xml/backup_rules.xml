@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 11 以前的自動備份。只備份資料庫（自選股、快取）與 settings；GeckoView 的設定檔（files/mozilla/，有 uBO 的過濾清單、cookie）不備份：自動備份只有 25 MB，超過就整份不備份 -->
+<full-backup-content>
+    <include domain="database" path="stockdesk.db" />
+    <include domain="sharedpref" path="settings.xml" />
+</full-backup-content>

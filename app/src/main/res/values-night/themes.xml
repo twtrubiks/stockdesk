@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 深色模式：啟動那一瞬間的視窗底色跟著系統，不會先閃一下白 -->
+<resources>
+    <style name="Theme.StockDesk" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/window_dark</item>
+    </style>
+</resources>

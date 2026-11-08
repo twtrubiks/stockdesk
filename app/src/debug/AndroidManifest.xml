@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 只有 debug 版：模擬器上的 DemoRecordingTest 用 MockWebServer（http://localhost）假裝官方來源，要允許連本機的明文 HTTP。release 版沒有這一份 -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application android:networkSecurityConfig="@xml/network_security_config" />
+</manifest>

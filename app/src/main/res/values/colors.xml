@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 啟動畫面與圖示用的顏色；App 裡的顏色在 Theme.kt -->
+<resources>
+    <color name="window_light">#FFF7F5F0</color>
+    <color name="window_dark">#FF141414</color>
+    <color name="ic_launcher_background">#FF1E3A34</color>
+    <color name="ic_paper">#FFF4EFE4</color>
+    <color name="ic_bar">#FF2F7D6B</color>
+</resources>

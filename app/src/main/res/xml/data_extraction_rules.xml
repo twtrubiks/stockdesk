@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 12 以後：雲端備份與換手機的直接傳輸，規則要跟 backup_rules.xml 一樣 -->
+<data-extraction-rules>
+    <cloud-backup>
+        <include domain="database" path="stockdesk.db" />
+        <include domain="sharedpref" path="settings.xml" />
+    </cloud-backup>
+    <device-transfer>
+        <include domain="database" path="stockdesk.db" />
+        <include domain="sharedpref" path="settings.xml" />
+    </device-transfer>
+</data-extraction-rules>

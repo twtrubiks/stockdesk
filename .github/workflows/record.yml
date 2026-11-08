@@ -1,0 +1,130 @@
+name: Android demo recording
+
+# 在 GitHub 的 ubuntu runner 上開 Android 模擬器，邊跑 DemoRecordingTest 邊錄影。
+# 結果會：
+#   1. 上傳成 artifact（android-demo），方便從手機 / 網頁下載
+#   2. force-push 到 media branch，讓 Claude 雲端 session 用 git 讀取影格圖片
+# 只改文件（CLAUDE.md、README.md、docs/）不會觸發。
+on:
+  workflow_dispatch:
+    inputs:
+      api-level:
+        description: 模擬器的 Android API level（push 觸發時固定用 28，也就是最低支援的 Android 9；Android 14 是 34）
+        default: '28'
+  push:
+    branches-ignore: [media]
+    paths:
+      - app/**
+      - core/**
+      - gradle/**
+      - '*.gradle.kts'
+      - gradle.properties
+      - scripts/ci/**
+      - .github/workflows/record.yml
+
+concurrency:
+  # 不同 API level 的錄影可以同時跑，不會互相取消
+  group: record-${{ github.ref }}-${{ inputs.api-level || '28' }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  record:
+    name: Pixel 7 Pro (API ${{ inputs.api-level || '28' }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+
+      # 模擬器建立 userdata 要約 7.2 GB 空閒空間，runner 預裝的工具鏈佔掉太多會直接 FATAL
+      - name: Free disk space
+        run: |
+          df -h /
+          sudo rm -rf /usr/share/dotnet /usr/share/swift /opt/ghc /usr/local/.ghcup /opt/hostedtoolcache/CodeQL
+          df -h /
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: gradle/actions/setup-gradle@v6
+
+      # 先在模擬器外 build，避免模擬器開著等 Gradle。
+      # JVM 單元測試（core 與 app）也在這裡跑，沒過就不錄影
+      - name: Build APKs
+        shell: bash
+        run: |
+          mkdir -p out
+          ./gradlew test assembleDebug assembleDebugAndroidTest assembleRelease 2>&1 | tee out/gradle-build.txt
+          # runner 記憶體不多，把 Gradle / Kotlin daemon 的記憶體還給模擬器
+          ./gradlew --stop
+          pkill -f KotlinCompileDaemon || true
+
+      - name: Record on emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ inputs.api-level || '28' }}
+          # google_apis 的 Google 服務在小 runner 上開機後會長時間滿載，展示用不到 Google 服務，用較輕的 AOSP 映像檔
+          target: default
+          arch: x86_64
+          profile: pixel_7_pro
+          # GeckoView 會另外開網頁內容的行程，2 GB 不太夠
+          ram-size: 3072M
+          # 錄 demo 影片要保留動畫
+          disable-animations: false
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none
+          script: bash scripts/ci/record.sh out
+
+      - name: Compress video & extract frames
+        if: always() && hashFiles('out/demo.raw.mp4') != ''
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg > /dev/null
+          mkdir -p media/frames
+          ffmpeg -loglevel error -i out/demo.raw.mp4 -an -c:v libx264 -crf 28 -preset veryfast \
+            -vf "scale=540:-2" -movflags +faststart media/demo.mp4
+          # 每 2 秒一張影格，給 Claude 檢查畫面用
+          ffmpeg -loglevel error -i out/demo.raw.mp4 -vf "fps=1/2,scale=360:-2" media/frames/%03d.png
+
+      # 成功或失敗都收集，讓 Claude 不必打 Actions log API 也能從 media branch 讀到原因
+      - name: Collect results
+        if: always()
+        run: |
+          mkdir -p media
+          cp out/*.txt media/ 2>/dev/null || true
+          cp -r out/screenshots media/ 2>/dev/null || true
+          {
+            echo "branch: ${GITHUB_REF_NAME}"
+            echo "commit: ${GITHUB_SHA}"
+            echo "api level: ${{ inputs.api-level || '28' }}"
+            echo "run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+            echo "job status: ${{ job.status }}"
+          } > media/info.txt
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: android-demo
+          path: media
+          retention-days: 7
+
+      - name: Publish to media branch
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cd media
+          git init -q -b media
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -qm "Demo recording: ${GITHUB_REF_NAME} @ ${GITHUB_SHA::7}"
+          git push -qf "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" media

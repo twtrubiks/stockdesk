@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 一張桌上的紙，上面三根長條（像權重與融資融券的表），放在 adaptive icon 中間 66dp 的安全區內 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="@color/ic_paper"
+        android:pathData="M34,30L74,30A4,4 0,0 1,78 34L78,74A4,4 0,0 1,74 78L34,78A4,4 0,0 1,30 74L30,34A4,4 0,0 1,34 30Z" />
+    <path android:fillColor="@color/ic_bar" android:pathData="M38,42L62,42L62,47L38,47Z" />
+    <path android:fillColor="@color/ic_bar" android:pathData="M38,52L70,52L70,57L38,57Z" />
+    <path android:fillColor="@color/ic_bar" android:pathData="M38,62L54,62L54,67L38,67Z" />
+</vector>

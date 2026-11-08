@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- 唯一的權限：連證交所、櫃買、集保、期交所，以及內建瀏覽器頁看網頁 -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- allowBackup 開著：自選股與快取交給系統備份，換手機、重裝接得回來；內建瀏覽器（GeckoView）的設定檔不備份（backup_rules / data_extraction_rules 兩份要一樣） -->
+    <application
+        android:name=".StockDeskApplication"
+        android:allowBackup="true"
+        android:fullBackupContent="@xml/backup_rules"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.StockDesk">
+        <!-- configChanges 含轉螢幕：不重建 Activity，Compose 自己重排、GeckoView 不用重接畫面，抓到一半的進度不會丟 -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|uiMode"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>
