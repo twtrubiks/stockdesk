@@ -9,6 +9,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.twtrubiks.stockdesk.core.govbank.GovBankDay
 import com.twtrubiks.stockdesk.core.http.Taipei
 import com.twtrubiks.stockdesk.core.indices.IndexDay
 import java.time.Instant
@@ -58,6 +59,26 @@ fun fmtIndexChange(change: Double, pct: Double): String {
     }
     return "$arrow${fmtPrice(abs(change))} (${"%.2f".format(Locale.US, abs(pct))}%)"
 }
+
+/**
+ * 八大官股的金額（元）：一億以上「+21.32 億」（兩位小數），以下「+9,240 萬」（四捨五入到萬）；帶正負號，四捨五入後是 0 就是「0 萬」。
+ */
+fun fmtAmount(yuan: Double): String {
+    if (abs(yuan) >= 1e8) return "%+.2f 億".format(Locale.US, yuan / 1e8)
+    val wan = Math.round(yuan / 1e4)
+    return if (wan == 0L) "0 萬" else "%+,d 萬".format(Locale.US, wan)
+}
+
+/** 照金額分買超、賣超（張數的正負可能跟金額不一樣，以金額為準，跟 blave、HiStock 的排行一樣）。 */
+fun govBankSide(amount: Double): String = when {
+    amount > 0 -> "買超"
+    amount < 0 -> "賣超"
+    else -> "持平"
+}
+
+/** 自選股分頁每列底下那一行：「官股 11/09 買超 +21.32 億・+955 張」。 */
+fun govBankLine(day: GovBankDay): String =
+    "官股 ${shortDate(day.date)} ${govBankSide(day.netAmount)} ${fmtAmount(day.netAmount)}・${fmtSigned(day.netLots)} 張"
 
 private val MONTH_DAY = DateTimeFormatter.ofPattern("MM/dd")
 private val HOUR_MINUTE = DateTimeFormatter.ofPattern("HH:mm")

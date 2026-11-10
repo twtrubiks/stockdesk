@@ -8,7 +8,7 @@ import java.util.Locale
 
 /**
  * 照 `docs/data-sources.md` 的實測格式「造」出來的官方回應（不是錄的）：證交所 MI_MARGN、櫃買 margin/balance、
- * 集保 qryStock、期交所 futuresQADetail、Yahoo 的 spark（國際指數）。
+ * 集保 qryStock、期交所 futuresQADetail、Yahoo 的 spark（國際指數）、blave 與 HiStock 的八大官股。
  *
  * 用途：core 的抓取流程測試（快取、市場判斷、token、節流、健全檢查），以及模擬器上 `FakeSources` 的展示資料。
  * **欄位順序本身對不對要靠 fixture 測試**（`MarginParseTest` 等吃錄好的真實回應）：這裡跟 parse 照的是同一份筆記，錯會一起錯。
@@ -264,6 +264,112 @@ object Samples {
             """{"symbol":"${esc(d.symbol)}","response":[$response]}"""
         }
         return """{"spark":{"result":[$results],"error":null}}"""
+    }
+
+    // --- 八大官股（blave、HiStock，非官方） ---------------------------------------------
+
+    /** 八家券商在 blave 的名稱（`bank_name`，2026-11-10 實測的順序）。 */
+    val GOV_BANKS = listOf("兆豐", "台企銀", "合庫", "土銀", "彰銀", "第一", "臺銀", "華南")
+
+    /** 一家券商一天：股數（股）、金額（元）。 */
+    data class BankFlow(val bank: String, val buy: Long, val sell: Long, val buyAmount: Double, val sellAmount: Double)
+
+    /** 一天買 [buyLots] 張、賣 [sellLots] 張、每股 [price] 元，八家平均分（除不盡的放在第一家）。 */
+    fun govBankFlows(buyLots: Long, sellLots: Long, price: Double): List<BankFlow> {
+        val n = GOV_BANKS.size
+        fun part(total: Long, i: Int) = total / n + if (i == 0) total % n else 0
+        return GOV_BANKS.mapIndexed { i, bank ->
+            val b = part(buyLots * 1000, i)
+            val s = part(sellLots * 1000, i)
+            BankFlow(bank, b, s, b * price, s * price)
+        }
+    }
+
+    /**
+     * blave `studio/charts/twstock/gov_bank/<代號>?start=&end=` 的回應（照 2026-11-10 錄的格式，`fixtures/blave-gov-bank-2330.json`）：
+     * 一列一家券商一天，日期舊到新，金額帶 `.0`；沒登入時 `history_tier` 是 anon。[days] 是空的就是 blave 沒有這一檔（實測回 200 ＋ 空陣列）。
+     */
+    fun blaveGovBank(code: String, days: Map<LocalDate, List<BankFlow>>): String {
+        val rows = days.toSortedMap().flatMap { (d, flows) ->
+            flows.map { f ->
+                """{"bank_name": "${esc(f.bank)}", "buy": ${f.buy}, "buy_amount": ${"%.1f".format(Locale.US, f.buyAmount)}, "date": "$d", """ +
+                    """"sell": ${f.sell}, "sell_amount": ${"%.1f".format(Locale.US, f.sellAmount)}, "stock_id": "${esc(code)}"}"""
+            }
+        }
+        return """{"data": [${rows.joinToString(", ")}], "history_days": 92, "history_next_tier": "login", "history_next_window": "6m", """ +
+            """"history_tier": "anon", "history_truncated": true, "history_window": "3m", "pro_limited": true, "stock_id": "${esc(code)}"}"""
+    }
+
+    /** HiStock 排行的一列：金額是萬元（賣超是負的）。 */
+    data class RankSample(val code: String, val name: String, val wan: Long)
+
+    /**
+     * HiStock `stock/broker8.aspx`（照 2026-11-10 錄的頁面，`fixtures/histock-broker8.html`）：
+     * `loadChart({"SumMoney":"[[epoch 毫秒（台北的午夜）, 億元], …]","Price":"…"})`，舊到新；
+     * 底下買超、賣超排行一檔一個 `<li title="2026-11-09 八大公股行庫合計買超 Top.1 : 台積電 (2330) 合計：213,162萬元">`（日期是最新那天）。
+     */
+    fun histockBroker8(days: List<Pair<LocalDate, Double>>, topBuy: List<RankSample> = emptyList(), topSell: List<RankSample> = emptyList()): String {
+        val sorted = days.sortedBy { it.first }
+        fun ms(d: LocalDate) = d.atStartOfDay(Taipei.ZONE).toInstant().toEpochMilli()
+        val sum = sorted.joinToString(",", "[", "]") { (d, yi) -> "[${ms(d)},$yi]" }
+        val price = sorted.joinToString(",", "[", "]") { (d, _) -> "[${ms(d)},42711.92]" }
+        val date = sorted.lastOrNull()?.first
+        fun list(side: String, rows: List<RankSample>) = rows.mapIndexed { i, r ->
+            """<li onclick='goUrl("${r.code}");' title="$date 八大公股行庫合計$side Top.${i + 1} : ${r.name} (${r.code}) 合計：${n(r.wan)}萬元" """ +
+                """style="cursor:pointer;height:26px;"><span class="w100 name">&nbsp;${r.name}</span><span class="w70">${n(r.wan)}</span></li>"""
+        }.joinToString("")
+        return """
+            <html><head><title>八大官股銀行/公股行庫買賣超排名 - HiStock嗨投資理財社群</title>
+            <script type="text/javascript">
+                ${'$'}(document).ready(function () {
+                    loadChart({"SumMoney":"$sum","Price":"$price"});
+                });
+            </script></head><body>
+            <ul class="menu"><li title="自選股"><a href="/stock/mystock.aspx">自選股</a></li></ul>
+            <div class="head1">八大官股銀行/公股行庫買賣總金額走勢圖</div><div id="hChart"></div>
+            <h3 class="seoh3">Top 30 八大官股銀行合計買超排名</h3><ul class="stock-list">${list("買超", topBuy)}</ul>
+            <h3 class="seoh3">Top 30 八大官股銀行合計賣超排名</h3><ul class="stock-list">${list("賣超", topSell)}</ul>
+            </body></html>
+        """.trimIndent()
+    }
+
+    /** HiStock 個股頁一天的合計：買超張數（張，捨去成整數）、金額（萬元），賣超是負的。 */
+    data class StockDaySample(val date: LocalDate, val lots: Long, val wan: Long)
+
+    /**
+     * HiStock `stock/broker.aspx?no=<代號>`（個股的八大官股，照 2026-11-10 錄的頁面，`fixtures/histock-broker-3131.html`）：
+     * 標題 `弘塑 (3131) 八大官股買賣超 - HiStock嗨投資理財社群`；
+     * `initalChart_Broker8({"Money1":"[[epoch 毫秒（UTC 的午夜）, 萬元], …]", …, "Count8":"…","SumCount":"…","SumMoney":"…","Price":"…"})`，舊到新。
+     * 八家各自的照合計平均分（除不盡的放在第一家），`Count` 帶 `.0`；`Price` 比合計多一天（今天盤中，實測如此）。
+     * HiStock 查不到代號時回的是台積電的頁面：[code] 傳別的代號就造得出來。
+     */
+    fun histockStockGovBank(code: String, name: String, days: List<StockDaySample>): String {
+        val sorted = days.sortedBy { it.date }
+        fun ms(d: LocalDate) = d.atStartOfDay(java.time.ZoneOffset.UTC).toInstant().toEpochMilli()
+        fun part(total: Long, i: Int) = total / 8 + if (i == 0) total % 8 else 0
+        fun series(value: (StockDaySample) -> String) = sorted.joinToString(",", "[", "]") { "[${ms(it.date)},${value(it)}]" }
+        val money = (1..8).map { i -> "\"Money$i\":\"${series { "${part(it.wan, i - 1)}" }}\"" }
+        val count = (1..8).map { i -> "\"Count$i\":\"${series { "${part(it.lots, i - 1)}.0" }}\"" }
+        val priceDays = sorted.map { it.date } + listOfNotNull(sorted.lastOrNull()?.date?.plusDays(1))
+        val price = priceDays.joinToString(",", "[", "]") { "[${ms(it)},1580]" }
+        val chart = (money + count + listOf(
+            "\"SumCount\":\"${series { "${it.lots}" }}\"",
+            "\"SumMoney\":\"${series { "${it.wan}" }}\"",
+            "\"Price\":\"$price\"",
+        )).joinToString(",", "{", "}")
+        return """
+            <!DOCTYPE html><html><head><title>${name} (${code}) 八大官股買賣超 - HiStock嗨投資理財社群</title></head><body>
+            <div class="cbchart"><div id="chart_Broker8" class="mainchart schart" style="height:355px;"></div><div id="chartInfo_Broker8" ></div></div>
+            <script>
+                ${'$'}(document).ready(function () {
+                    initalChart_Broker8($chart);
+                });
+
+                function initalChart_Broker8(data) {
+                    options.series[1].data = eval(data['SumMoney']);
+                }
+            </script></body></html>
+        """.trimIndent()
     }
 
     // --- 共用 ------------------------------------------------------------------------

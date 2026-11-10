@@ -82,5 +82,8 @@ class SmallPartsTest {
         assertEquals("https://tw.stock.yahoo.com/world-indices", Links.YAHOO_WORLD_INDICES)
         assertEquals("https://www.wantgoo.com/stock/public-bank/trend?market=-1", Links.publicBank(PublicBankMarket.ALL))
         assertEquals("https://www.wantgoo.com/stock/public-bank/trend?market=1", Links.publicBank(PublicBankMarket.TPEX))
+        assertEquals("https://blave.org/studio/twstock/zh/chips/gov_bank?stock_id=2330", Links.blaveGovBank("2330"))
+        assertEquals("https://histock.tw/stock/broker8.aspx", Links.HISTOCK_GOV_BANK)
+        assertEquals("https://histock.tw/stock/broker.aspx?no=3131", Links.histockGovBank("3131"))
     }
 }

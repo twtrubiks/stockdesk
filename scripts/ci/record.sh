@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # 在模擬器上先跑 DeviceTest（Android 的 SQLite 跑 store 的 SQL，不錄影），再一邊錄影一邊跑 DemoRecordingTest，
 # 最後覆蓋安裝 release 版做冒煙測試（打開 App 沒有閃退、goodinfo 頁有出來）。
-# 模擬器不連外：DemoRecordingTest 用 MockWebServer 假裝證交所 / 櫃買 / 集保 / 期交所（App 的 base URL 可以改），內建瀏覽器頁只開一下看標題列與錯誤頁。
+# 資料來源換成假的：DemoRecordingTest 用 MockWebServer 假裝證交所 / 櫃買 / 集保 / 期交所等（App 的 base URL 可以改）；內建瀏覽器頁只開一下，看得到網站的標題，內容通常還沒畫出來。
 # APK 按 CPU 拆開（GeckoView），模擬器裝 x86_64 那一份。
 # 輸出到 $1（預設 out/）：device-test.txt、demo.raw.mp4、instrument.txt、logcat.txt、screenshots/、release-smoke.txt、logcat-release.txt
 # 由 .github/workflows/record.yml 在 android-emulator-runner 裡呼叫，工作目錄是 repo 根目錄。

@@ -3,6 +3,8 @@ package com.twtrubiks.stockdesk
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.twtrubiks.stockdesk.core.Samples
+import com.twtrubiks.stockdesk.core.govbank.GovBankDay
+import com.twtrubiks.stockdesk.core.govbank.GovBankSource
 import com.twtrubiks.stockdesk.core.holders.HoldersSource
 import com.twtrubiks.stockdesk.core.margin.MarginDay
 import com.twtrubiks.stockdesk.core.model.Market
@@ -21,7 +23,8 @@ import java.util.Locale
 /**
  * 只有真機才測得到的事：Android 9 內建的 SQLite（3.22）跑得動 store 的**每一條** SQL
  * （JVM 測試用的 sqlite-jdbc 版本新很多，UPSERT、window function、RETURNING 之類的新語法擋不下來）。
- * 也順便驗 [AndroidSql] 的型別轉換（INTEGER → Long、REAL → Double、NULL），以及 Android 上的數字格式（千分位）。
+ * 也順便驗 [AndroidSql] 的型別轉換（INTEGER → Long、REAL → Double、NULL）、Android 上的數字格式（千分位），
+ * 以及 core 解析用的 regex 在 Android（ICU）上編得過、結果跟 JVM 一樣（ICU 不接受沒跳脫的 `}` 之類的，JVM 測試擋不下來）。
  * `record.sh` 在錄影前先跑、不錄影。用另一個檔名，不碰 App 自己的資料庫。
  */
 @RunWith(AndroidJUnit4::class)
@@ -89,6 +92,13 @@ class DeviceTest {
         cache.putWeights(listOf(WeightRow(1, "2330", "台積電", 41.0)), "2026-11-30", "2026-12-01 09:30")
         assertEquals(listOf(WeightRow(1, "2330", "台積電", 41.0)), cache.weights())
         assertEquals("2026-11-30", cache.meta(CacheStore.META_WEIGHTS_DATE))
+
+        val gov = GovBankDay("2026-11-06", 1_000_000, 400_000, 1_500_000_000.0, 600_000_000.0)
+        cache.putGovBankDays("2330", listOf(gov, gov.copy(date = "2026-11-05"), gov.copy(date = "2026-08-01")), keepSince = LocalDate.of(2026, 7, 1))
+        cache.putGovBankDays("2330", listOf(gov.copy(buy = 2_000_000)), keepSince = LocalDate.of(2026, 9, 1))
+        assertEquals(listOf("2026-11-06", "2026-11-05"), cache.govBankDays("2330", 10).map { it.date })
+        assertEquals(2_000_000L, cache.govBankDays("2330", 1).single().buy)
+        assertEquals(900_000_000.0, cache.govBankDays("2330", 1).single().netAmount, 0.0)
     }
 
     @Test
@@ -106,6 +116,27 @@ class DeviceTest {
     }
 
     @Test
+    fun govBankParsersRunOnAndroidRegex() {
+        // GovBankSource 的 companion 一載入就編譯所有 regex：編不過整個 App 一進自選股分頁就閃退
+        val stock = GovBankSource.parseHistockStock(
+            Samples.histockStockGovBank("3131", "弘塑", listOf(Samples.StockDaySample(day, -14, -2_156), Samples.StockDaySample(day.plusDays(3), 1, 291))),
+            "3131",
+        )
+        assertEquals(listOf("2026-11-09", "2026-11-06"), stock.map { it.date })
+        assertEquals(listOf(1L, -14L), stock.map { it.netLots })
+        assertEquals(emptyList<GovBankDay>(), GovBankSource.parseHistockStock(Samples.histockStockGovBank("2330", "台積電", emptyList()), "9999"))
+
+        val market = GovBankSource.parseHistock(
+            Samples.histockBroker8(listOf(day to 102.562), topBuy = listOf(Samples.RankSample("2330", "台積電", 213_162))),
+        )
+        assertEquals(102.562e8, market.latest!!.netAmount, 1.0)
+        assertEquals("2330", market.topBuy.single().code)
+
+        val blave = GovBankSource.parseBlave(Samples.blaveGovBank("2330", mapOf(day to Samples.govBankFlows(3_000, 1_000, price = 1_000.0))))
+        assertEquals(2_000L, blave.single().netLots)
+    }
+
+    @Test
     fun numberFormatOnDevice() {
         // Android 的 java.util.Formatter 跟 JVM 不完全一樣（Locale.ROOT 在 Android 上不加千分位）：JVM 的 FormatTest 擋不下來
         val original = Locale.getDefault()
@@ -117,6 +148,8 @@ class DeviceTest {
                 assertEquals(locale.toString(), "11.44%", fmtPct(11.44))
                 assertEquals(locale.toString(), "40.1235%", fmtPct(40.123_46, 4))
                 assertEquals(locale.toString(), "-0.13", fmtSignedPct(-0.13))
+                assertEquals(locale.toString(), "+21.32 億", fmtAmount(2_131_618_285.0))
+                assertEquals(locale.toString(), "-9,240 萬", fmtAmount(-92_400_000.0))
             }
         } finally {
             Locale.setDefault(original)

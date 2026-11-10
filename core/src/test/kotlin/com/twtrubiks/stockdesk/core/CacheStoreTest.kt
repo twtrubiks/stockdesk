@@ -1,5 +1,6 @@
 package com.twtrubiks.stockdesk.core
 
+import com.twtrubiks.stockdesk.core.govbank.GovBankDay
 import com.twtrubiks.stockdesk.core.holders.HoldersSource
 import com.twtrubiks.stockdesk.core.margin.MarginDay
 import com.twtrubiks.stockdesk.core.model.Market
@@ -77,6 +78,21 @@ class CacheStoreTest {
         assertEquals(listOf("2330" to 41.0, "2454" to 4.5), cache.weights().map { it.code to it.weight })
         assertEquals("2026-10-31", cache.meta(CacheStore.META_WEIGHTS_DATE))
         assertEquals("2026-11-10 09:30", cache.meta(CacheStore.META_WEIGHTS_FETCHED))
+    }
+
+    @Test
+    fun govBankDaysNewestFirstReplacedAndPruned() {
+        fun d(date: String, buy: Long = 1_000) = GovBankDay(date, buy, 400, buy * 10.0, 4_000.0)
+        cache.putGovBankDays("2330", listOf(d("2026-11-05"), d("2026-11-06"), d("2026-08-01")), keepSince = LocalDate.of(2026, 7, 1))
+        assertEquals(listOf("2026-11-06", "2026-11-05", "2026-08-01"), cache.govBankDays("2330", 10).map { it.date })
+        assertEquals(listOf("2026-11-06"), cache.govBankDays("2330", 1).map { it.date })
+        // 同一天覆蓋；keepSince 以前的刪掉（只刪這一檔的）
+        cache.putGovBankDays("6515", listOf(d("2026-08-01")), keepSince = LocalDate.of(2026, 7, 1))
+        cache.putGovBankDays("2330", listOf(d("2026-11-06", buy = 2_000)), keepSince = LocalDate.of(2026, 9, 1))
+        assertEquals(listOf("2026-11-06" to 2_000L, "2026-11-05" to 1_000L), cache.govBankDays("2330", 10).map { it.date to it.buy })
+        assertEquals(listOf("2026-08-01"), cache.govBankDays("6515", 10).map { it.date })
+        assertEquals(emptyList<GovBankDay>(), cache.govBankDays("2317", 10))
+        assertEquals(16_000.0, cache.govBankDays("2330", 1).single().netAmount, 1e-9)
     }
 
     @Test

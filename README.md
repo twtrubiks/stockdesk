@@ -13,7 +13,7 @@
 |:-:|:-:|:-:|:-:|
 | <img src="docs/screenshots/indices.png" width="200" alt="大盤分頁：國際指數走勢"> | <img src="docs/screenshots/weights.png" width="200" alt="大盤分頁：加權指數權重"> | <img src="docs/screenshots/public-bank.png" width="200" alt="大盤分頁：八大官股"> | <img src="docs/screenshots/settings.png" width="200" alt="設定"> |
 
-截圖來自 CI 的 Android 9 模擬器（[`record.yml`](.github/workflows/record.yml)），模擬器不連外，畫面上的數字是測試用的假資料。
+截圖來自 CI 的 Android 9 模擬器（[`record.yml`](.github/workflows/record.yml)），資料來源換成假的，畫面上的數字是測試用的假資料。
 更新截圖：CI 跑完後執行 `scripts/readme-screenshots.sh`。
 
 ## 功能
@@ -24,8 +24,9 @@
 - **大盤**：三頁切換
   - **國際指數**：台股加權、道瓊、S&P 500、NASDAQ、費半、日經 225、韓國 KOSPI、恆生最近一個交易日的走勢圖（Yahoo 的資料，非官方），手動重新整理
   - **權重**：加權指數成分股市值比重前 N 名（期交所，每月月底更新），進頁面時一天抓一次
-  - **官股**：八大官股券商每日買賣超明細（玩股網的網頁，內建瀏覽器頁開；上市櫃／上市／上櫃）
-- **自選股**：打代號或名稱搜尋加入，刪、排順序、改名、匯出匯入
+  - **官股**：八大官股（八家公股券商）的買賣超：全市場當天買超還是賣超、多少（HiStock，非官方）與買超／賣超前 5 名；
+    自選股每一檔最新一天的張數與金額、自選股合計（blave，上櫃股用 HiStock，非官方）。進頁面時當天的數字公布後抓一次；網頁版（HiStock、玩股網）在內建瀏覽器頁開
+- **自選股**：打代號或名稱搜尋加入，刪、排順序、改名、匯出匯入；每一檔底下一行八大官股最新一天的買賣超
 - **內建瀏覽器**：用 GeckoView（Firefox 的引擎），內建 uBlock Origin 擋網頁上的廣告。uBlock Origin 不在 APK 裡，第一次啟動時從 Mozilla 附加元件網站下載安裝，之後一天最多檢查一次更新
 - 抓回來的資料存在手機上，離線也看得到上一次的結果；只有一個權限（網路）；App 本身沒有廣告、沒有遙測
 
@@ -56,7 +57,7 @@ Kotlin + Jetpack Compose，在 [claude.ai/code](https://claude.ai/code) 雲端 s
 
 ## 注意
 
-資料來自證交所、櫃買、集保、期交所的公開網頁／資料，國際指數來自 Yahoo 股市（非官方），自用／學習取向；請自行留意各自的服務條款。
+資料來自證交所、櫃買、集保、期交所的公開網頁／資料，國際指數來自 Yahoo 股市、八大官股來自 HiStock 與 blave（都非官方），自用／學習取向；請自行留意各自的服務條款。
 程式已內建節流（兩次請求之間至少隔 1～2 秒），請勿改小或平行大量請求。
 
 ⭐ **如果這個專案對您有幫助，請給一個 Star！** ⭐

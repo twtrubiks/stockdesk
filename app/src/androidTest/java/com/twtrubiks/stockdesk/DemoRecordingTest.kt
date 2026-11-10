@@ -9,9 +9,10 @@ import org.junit.runner.RunWith
 
 /**
  * 錄影用的展示流程，CI 只錄這個 class，`scripts/ci/record.sh` 會在執行期間錄下整個螢幕。
- * 不連外：資料來源換成模擬器上的 [FakeSources]（MockWebServer，回 [com.twtrubiks.stockdesk.core.Samples] 造的假回應）。
- * 走自選股（加兩檔）→ goodinfo（2330 的融資融券與持股分級按「抓」，全部收合再點 2330 展開）→ 社群（點一檔開內建瀏覽器頁，沒網路只看得到標題列與錯誤頁，再關掉）
- * → 大盤（國際指數 → 權重（進頁面自動抓）→ 官股，點一列開內建瀏覽器頁再關掉）→ 設定。全長控制在 150 秒內。
+ * 資料來源換成模擬器上的 [FakeSources]（MockWebServer，回 [com.twtrubiks.stockdesk.core.Samples] 造的假回應）。
+ * 走自選股（加兩檔）→ goodinfo（2330 的融資融券與持股分級按「抓」，全部收合再點 2330 展開）→ 社群（點一檔開內建瀏覽器頁，看得到網站的標題，內容通常還沒畫出來，再關掉）
+ * → 大盤（國際指數 → 權重（進頁面自動抓）→ 官股（進頁面自動抓全市場與兩檔自選股），點 2330 開內建瀏覽器頁再關掉）
+ * → 自選股（每檔底下多一行官股）→ 設定。全長控制在 150 秒內。
  */
 @RunWith(AndroidJUnit4::class)
 class DemoRecordingTest : UiTest() {
@@ -88,7 +89,7 @@ class DemoRecordingTest : UiTest() {
         waitFor(res("tab_forum"))
         pause(1000)
 
-        // 大盤：預設是國際指數（假的 Yahoo，8 個指數，台股是盤中），再切到權重（今天沒抓過，進頁面就抓）、官股（只開網頁）
+        // 大盤：預設是國際指數（假的 Yahoo，8 個指數，台股是盤中），再切到權重（今天沒抓過，進頁面就抓）、官股（進頁面就抓）
         find(res("tab_market")).click()
         waitFor(res("index_TWII"), timeout = 30_000)
         waitFor(res("index_DJI"))
@@ -98,21 +99,32 @@ class DemoRecordingTest : UiTest() {
         waitFor(By.text("台積電"), timeout = 30_000)
         pause(2000)
         screenshot("10-weights")
+        // 官股：假的 HiStock 一發、假的 blave 兩檔各一發（隔 2 秒）；6515 在 FakeSources 是上櫃，blave 回空的，
+        // 改抓假的 HiStock 個股頁（跟全市場同一台主機，再隔 2 秒）。抓完才有自選股合計那一列
         find(res("market_public_bank")).click()
-        waitFor(res("public_bank_all"))
-        pause(1500)
+        waitFor(res("gov_bank_total"), timeout = 30_000)
+        waitFor(res("gov_bank_market"))
+        pause(2000)
         screenshot("11-public-bank")
-        find(res("public_bank_all")).click()
+        find(res("gov_bank_2330")).click()
         waitFor(res("browser_close"))
         pause(1500)
         find(res("browser_close")).click()
         // 關掉瀏覽器回來還是官股那一頁
-        waitFor(res("public_bank_all"))
+        waitFor(res("gov_bank_2330"))
+        pause(1000)
+
+        // 自選股：每檔底下一行官股最新一天的買賣超（剛剛抓的快取）
+        find(res("tab_watchlist")).click()
+        waitFor(res("gov_line_2330"))
+        waitFor(res("gov_line_6515"))
+        pause(1500)
+        screenshot("12-watchlist-gov-bank")
 
         find(res("settings_button")).click()
         waitFor(By.text("設定"))
         pause(1500)
-        screenshot("12-settings")
+        screenshot("13-settings")
         device.pressBack()
         waitFor(res("tab_goodinfo"))
         pause(1000)

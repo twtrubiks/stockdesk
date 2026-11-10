@@ -5,6 +5,7 @@ import android.app.Application
 import android.content.Context
 import android.os.Looper
 import android.util.Log
+import com.twtrubiks.stockdesk.core.govbank.GovBankSource
 import com.twtrubiks.stockdesk.core.holders.HoldersSource
 import com.twtrubiks.stockdesk.core.http.Http
 import com.twtrubiks.stockdesk.core.http.OkHttp
@@ -78,6 +79,11 @@ class AppContainer(private val context: Context, val endpoints: Endpoints = Endp
     val weights by lazy { WeightsSource(http, cache, url = endpoints.taifex) }
     val indices by lazy { IndicesSource(http, cache, url = endpoints.yahoo) }
 
+    /** 八大官股（個股 blave，blave 沒有的上櫃股 HiStock 個股頁；全市場 HiStock）。只讀快取的時候用 `GovBankSource.cached(cache, …)`，不用建這個（會建 OkHttpClient）。 */
+    val govBank by lazy {
+        GovBankSource(http, cache, blaveBase = endpoints.blave, histockUrl = endpoints.histock, histockStockUrl = endpoints.histockStock)
+    }
+
     /** 抓取都在這個 scope 跑，不綁在畫面上：切到別的分頁、轉螢幕都不會中斷。裡面 `launch` 的東西例外一定要接住。 */
     val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
@@ -143,4 +149,7 @@ data class Endpoints(
     val tdcc: String = "https://www.tdcc.com.tw/portal/zh/smWeb/qryStock",
     val taifex: String = "https://www.taifex.com.tw/cht/9/futuresQADetail",
     val yahoo: String = "https://query1.finance.yahoo.com/v7/finance/spark",
+    val blave: String = "https://api.blave.org",
+    val histock: String = "https://histock.tw/stock/broker8.aspx",
+    val histockStock: String = "https://histock.tw/stock/broker.aspx",
 )

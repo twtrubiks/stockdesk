@@ -3,6 +3,7 @@ package com.twtrubiks.stockdesk
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Test
+import com.twtrubiks.stockdesk.core.govbank.GovBankDay
 import com.twtrubiks.stockdesk.core.indices.IndexDay
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -53,6 +54,25 @@ class FormatTest {
         assertEquals("▼ 237.33 (0.46%)", fmtIndexChange(-237.33, -0.4606))
         assertEquals("▲ 23.13 (0.31%)", fmtIndexChange(23.13, 0.3145))
         assertEquals("0.00 (0.00%)", fmtIndexChange(0.001, 0.0))
+    }
+
+    @Test
+    fun govBankAmountsAndLine() {
+        assertEquals("+21.32 億", fmtAmount(2_131_618_285.0))
+        assertEquals("-1.00 億", fmtAmount(-100_000_000.0))
+        assertEquals("+9,240 萬", fmtAmount(92_400_000.0))
+        assertEquals("-50 萬", fmtAmount(-500_000.0))
+        assertEquals("0 萬", fmtAmount(4_000.0))
+        assertEquals("買超", govBankSide(1.0))
+        assertEquals("賣超", govBankSide(-1.0))
+        assertEquals("持平", govBankSide(0.0))
+        // 台積電 2026-11-09（blave 的真實回應加起來）
+        val day = GovBankDay("2026-11-09", buy = 2_863_879, sell = 1_908_988, buyAmount = 6_686_000_000.0, sellAmount = 4_554_381_715.0)
+        assertEquals("官股 11/09 買超 +21.32 億・+955 張", govBankLine(day))
+        assertEquals("官股 11/09 賣超 -21.32 億・-955 張", govBankLine(day.copy(buy = day.sell, sell = day.buy, buyAmount = day.sellAmount, sellAmount = day.buyAmount)))
+        Locale.setDefault(Locale.GERMANY)
+        assertEquals("+9,240 萬", fmtAmount(92_400_000.0))
+        assertEquals("+21.32 億", fmtAmount(2_131_618_285.0))
     }
 
     @Test

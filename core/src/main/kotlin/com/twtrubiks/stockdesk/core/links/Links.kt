@@ -24,6 +24,15 @@ object Links {
      */
     fun publicBank(market: PublicBankMarket) = "https://www.wantgoo.com/stock/public-bank/trend?market=${market.param}"
 
+    /** blave 的個股「八大公股銀行買賣超」網頁（有圖、可以看更久以前）：官股頁點一檔開這裡。 */
+    fun blaveGovBank(code: String) = "https://blave.org/studio/twstock/zh/chips/gov_bank?stock_id=${enc(code)}"
+
+    /** HiStock 的「八大官股銀行／公股行庫買賣超排名」網頁：官股頁全市場那一塊的網頁版（App 抓的就是這一頁）。 */
+    const val HISTOCK_GOV_BANK = "https://histock.tw/stock/broker8.aspx"
+
+    /** HiStock 的個股「八大官股買賣超」網頁（上市、上櫃都有）：blave 沒有的檔（上櫃）App 抓的就是這一頁，官股頁點那一檔開這裡。 */
+    fun histockGovBank(code: String) = "https://histock.tw/stock/broker.aspx?no=${enc(code)}"
+
     /** Yahoo 股市的國際指數網頁：大盤分頁「國際指數」抓不到時的備案（同一份資料的網頁版）。 */
     const val YAHOO_WORLD_INDICES = "https://tw.stock.yahoo.com/world-indices"
 

@@ -1,5 +1,6 @@
 package com.twtrubiks.stockdesk.core.store
 
+import com.twtrubiks.stockdesk.core.govbank.GovBankDay
 import com.twtrubiks.stockdesk.core.holders.HolderWeek
 import com.twtrubiks.stockdesk.core.margin.MarginDay
 import com.twtrubiks.stockdesk.core.model.Market
@@ -15,6 +16,8 @@ import java.time.LocalDate
  *   某天抓過、但某檔沒有列（後來才加進自選股）→ 那天要重抓一次。
  * - 股東持股分級：來源一次回「一檔、一週」，`holders_weeks(code, date, json)` 整筆存 JSON；公布後不會再變，永久有效。
  * - 權重：整張表（約 1,000 列）存 `weights(rank, code, name, weight)`，另記資料日期與抓取時間；一天只自動抓一次。
+ * - 八大官股：來源一次回「一檔、最近 20 天」，`gov_bank_days(code, date, json)` 一天一筆（八家券商加起來），只留最近 90 天；
+ *   全市場（HiStock）整份與抓取時間存 `meta`（見 `GovBankSource`）。
  *
  * 「今天沒資料」可能只是還沒公布，不記成休市：由 source 在記憶體裡記 10 分鐘（見 `MarginSource.TODAY_EMPTY_TTL`）。
  */
@@ -58,6 +61,16 @@ class CacheStore(private val sql: Sql) {
                 code TEXT NOT NULL,
                 name TEXT NOT NULL,
                 weight REAL NOT NULL
+            )
+            """.trimIndent(),
+        )
+        sql.execute(
+            """
+            CREATE TABLE IF NOT EXISTS gov_bank_days (
+                code TEXT NOT NULL,
+                date TEXT NOT NULL,
+                json TEXT NOT NULL,
+                PRIMARY KEY (code, date)
             )
             """.trimIndent(),
         )
@@ -119,6 +132,21 @@ class CacheStore(private val sql: Sql) {
         rows.forEach { sql.execute("INSERT INTO weights (rank, code, name, weight) VALUES (?, ?, ?, ?)", it.rank, it.code, it.name, it.weight) }
         putMeta(META_WEIGHTS_DATE, dataDate)
         putMeta(META_WEIGHTS_FETCHED, fetchedAt)
+    }
+
+    // --- 八大官股 ----------------------------------------------------------------------
+
+    /** 一檔最近 [limit] 天（新到舊）。 */
+    fun govBankDays(code: String, limit: Int): List<GovBankDay> =
+        sql.query("SELECT json FROM gov_bank_days WHERE code = ? ORDER BY date DESC LIMIT ${limit.coerceAtLeast(1)}", code)
+            .map { json.decodeFromString<GovBankDay>(it.string("json")) }
+
+    /** 存一檔抓回來的那幾天（同一天覆蓋），順便刪掉這一檔 [keepSince] 以前的。 */
+    fun putGovBankDays(code: String, days: List<GovBankDay>, keepSince: LocalDate) = sql.transaction {
+        days.forEach {
+            sql.execute("INSERT OR REPLACE INTO gov_bank_days (code, date, json) VALUES (?, ?, ?)", code, it.date, json.encodeToString(it))
+        }
+        sql.execute("DELETE FROM gov_bank_days WHERE code = ? AND date < ?", code, keepSince.toString())
     }
 
     // --- meta ------------------------------------------------------------------------

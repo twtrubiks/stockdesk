@@ -29,11 +29,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import com.twtrubiks.stockdesk.core.govbank.GovBankDay
+import com.twtrubiks.stockdesk.core.govbank.GovBankSource
 import com.twtrubiks.stockdesk.core.model.StockCode
 import com.twtrubiks.stockdesk.core.model.StockRef
 import com.twtrubiks.stockdesk.core.store.DuplicateStockException
@@ -46,6 +49,7 @@ import kotlinx.coroutines.withContext
  * 自選股分頁：加（一個輸入框，打代號前幾碼或名稱的字，底下列候選，點一筆就加入；直接打完整代號按「加入」也行）、
  * 點名稱改名（對照表查不到的新股在這裡自己填）、刪、上下移、匯出／匯入 JSON（系統的檔案畫面）。
  * goodinfo、社群兩個分頁都照這份清單列。清單一改，另外兩個分頁下次顯示時重讀。
+ * 每一列名稱底下一行是八大官股最新一天的買賣超（快取裡有才顯示；在大盤的「官股」頁抓，抓完這裡跟著重讀）。
  *
  * 候選清單直接排在輸入框下面、不用彈出層：彈出層會搶走輸入框的焦點把鍵盤收掉，也會擋住旁邊的「加入」。
  */
@@ -62,6 +66,14 @@ fun WatchlistScreen(onSettings: () -> Unit) {
 
     suspend fun reload() { stocks = withContext(Dispatchers.IO) { c.watchlist.all() } }
     androidx.compose.runtime.LaunchedEffect(Unit) { reload() }
+
+    // 八大官股最新一天（只讀快取）：清單變了、官股頁抓完了就重讀
+    var gov by remember { mutableStateOf<Map<String, GovBankDay>>(emptyMap()) }
+    val govResult = c.jobs.govBankResult
+    androidx.compose.runtime.LaunchedEffect(stocks, govResult) {
+        val codes = stocks?.map { it.code } ?: return@LaunchedEffect
+        gov = withContext(Dispatchers.IO) { GovBankSource.latest(c.cache, codes) }
+    }
 
     // 候選：對照表在記憶體裡（約 3,100 檔），每敲一個字掃一遍是毫秒級的事；已經在清單裡的不列
     // 輸入是空的就不碰 c.names：它第一次用到才讀打包的 JSON，讓 reload()（IO）那邊先載
@@ -148,12 +160,19 @@ fun WatchlistScreen(onSettings: () -> Unit) {
         if (list.isEmpty()) Text("清單是空的。打代號前幾碼或名稱的字選一檔加入，或用右上角「匯入」讀回之前匯出的檔案。", Modifier.padding(16.dp))
         LazyColumn(Modifier.fillMaxSize()) {
             items(list, key = { it.code }) { s ->
-                Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)) {
-                    Text(
-                        s.label,
-                        Modifier.weight(1f).clickable { renaming = s }.padding(vertical = 12.dp),
-                        style = MaterialTheme.typography.bodyLarge,
-                    )
+                Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                    val day = gov[s.code]
+                    Column(Modifier.weight(1f).clickable { renaming = s }.padding(vertical = if (day == null) 12.dp else 6.dp)) {
+                        Text(s.label, style = MaterialTheme.typography.bodyLarge)
+                        if (day != null) {
+                            Text(
+                                govBankLine(day),
+                                Modifier.testTag("gov_line_${s.code}"),
+                                style = numStyle(MaterialTheme.typography.bodySmall),
+                                color = changeColor(day.netAmount),
+                            )
+                        }
+                    }
                     IconButton(onClick = { scope.launch { withContext(Dispatchers.IO) { c.watchlist.move(s.code, -1) }; reload() } }) { Icon(painterResource(R.drawable.ic_arrow_up), contentDescription = "上移") }
                     IconButton(onClick = { scope.launch { withContext(Dispatchers.IO) { c.watchlist.move(s.code, +1) }; reload() } }) { Icon(painterResource(R.drawable.ic_arrow_down), contentDescription = "下移") }
                     IconButton(onClick = { scope.launch { withContext(Dispatchers.IO) { c.watchlist.remove(s.code) }; reload() } }) { Icon(painterResource(R.drawable.ic_delete), contentDescription = "刪除") }

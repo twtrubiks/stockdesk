@@ -4,6 +4,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import com.twtrubiks.stockdesk.core.govbank.GovBank
+import com.twtrubiks.stockdesk.core.govbank.GovBankEvent
 import com.twtrubiks.stockdesk.core.holders.HolderWeek
 import com.twtrubiks.stockdesk.core.holders.HoldersEvent
 import com.twtrubiks.stockdesk.core.margin.MarginDay
@@ -32,6 +34,14 @@ class FetchJobs(private val c: AppContainer) {
     val margin = mutableStateMapOf<String, JobState<MarginResult>>()
     val holders = mutableStateMapOf<String, JobState<List<HolderWeek>>>()
 
+    /** 八大官股（大盤的官股頁）：整份自選股一起抓，不分代號。 */
+    var govBank by mutableStateOf<JobState<GovBank>>(JobState.Idle)
+        private set
+
+    /** 最近一次八大官股抓完的結果（抓取中也留著），官股頁與自選股分頁看到它變了就重讀。 */
+    var govBankResult by mutableStateOf<GovBank?>(null)
+        private set
+
     var busy by mutableStateOf(false)
         private set
     private var current: Job? = null
@@ -55,6 +65,32 @@ class FetchJobs(private val c: AppContainer) {
                 is HoldersEvent.Failed -> JobState.Failed(e.message)
             }
         }.collect()
+    }
+
+    /**
+     * 八大官股：先全市場（HiStock 一發），再自選股一檔一發（blave）。[force] 是標題列的重新整理；
+     * 否則該公布的那天已經抓過的就只讀快取（官股頁一進來就呼叫，大部分時候不連網）。
+     */
+    fun fetchGovBank(force: Boolean) {
+        if (busy) return
+        busy = true
+        govBank = JobState.Running("開始抓…")
+        current = c.scope.launch {
+            try {
+                val stocks = c.watchlist.all()
+                c.govBank.load(stocks, force).onEach { e ->
+                    if (e is GovBankEvent.Done) govBankResult = e.result
+                    govBank = when (e) {
+                        is GovBankEvent.Progress -> JobState.Running("${e.done}/${e.total} ${e.label}${if (e.cached) "（快取）" else ""}", e.done, e.total)
+                        is GovBankEvent.Done -> JobState.Ready(e.result, cached = e.result.cached)
+                    }
+                }.collect()
+            } catch (e: Exception) {
+                govBank = JobState.Failed(e.message ?: e.javaClass.simpleName)
+            } finally {
+                busy = false
+            }
+        }
     }
 
     fun cancel() {

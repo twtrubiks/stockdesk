@@ -23,6 +23,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
@@ -35,15 +36,16 @@ enum class MarketPage(val label: String, val tag: String) {
 }
 
 /**
- * 大盤分頁：看整個市場、跟自選股無關的三頁，上面的切換鈕切換：國際指數（[IndicesPage]）、加權指數權重（[WeightsPage]）、
- * 八大官股買賣超（[PublicBankPage]）。選到哪一頁由 [StockDeskApp] 記著（切到別的分頁再回來、轉螢幕都還在）。
- * 標題列的重新整理給國際指數與權重用（抓的時候變成轉圈），官股只開網頁、沒有重新整理。
+ * 大盤分頁：看整個市場的三頁，上面的切換鈕切換：國際指數（[IndicesPage]）、加權指數權重（[WeightsPage]）、
+ * 八大官股買賣超（[PublicBankPage]，全市場與自選股）。選到哪一頁由 [StockDeskApp] 記著（切到別的分頁再回來、轉螢幕都還在）。
+ * 標題列的重新整理三頁都有（抓的時候變成轉圈）。官股的抓取在 [FetchJobs]：別的抓取在跑時重新整理停用。
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MarketScreen(page: MarketPage, onPage: (MarketPage) -> Unit, onSettings: () -> Unit, onOpen: (url: String) -> Unit) {
     // 每一頁各自的「抓取中」：切頁時舊的那頁取消、新的那頁開始，兩邊的通知先後不一定，所以分開記
     val loading = remember { mutableStateMapOf<MarketPage, Boolean>() }
+    val jobs = LocalContext.current.container.jobs
     // 按了幾次重新整理；換頁就歸零，進頁面時由那一頁自己決定要不要抓（權重一天一次、國際指數 5 分鐘）
     var refresh by remember(page) { mutableIntStateOf(0) }
 
@@ -51,14 +53,18 @@ fun MarketScreen(page: MarketPage, onPage: (MarketPage) -> Unit, onSettings: () 
         TopAppBar(
             title = { Text("大盤") },
             actions = {
-                if (page != MarketPage.PUBLIC_BANK) {
-                    Box(Modifier.size(48.dp), contentAlignment = Alignment.Center) {
-                        if (loading[page] == true) {
-                            CircularProgressIndicator(Modifier.size(22.dp), strokeWidth = 2.5.dp)
-                        } else {
-                            IconButton(onClick = { refresh++ }, Modifier.testTag(if (page == MarketPage.WEIGHTS) "weights_refresh" else "indices_refresh")) {
-                                Icon(painterResource(R.drawable.ic_refresh), contentDescription = "重新整理")
-                            }
+                val spinning = if (page == MarketPage.PUBLIC_BANK) jobs.govBank is JobState.Running else loading[page] == true
+                Box(Modifier.size(48.dp), contentAlignment = Alignment.Center) {
+                    if (spinning) {
+                        CircularProgressIndicator(Modifier.size(22.dp), strokeWidth = 2.5.dp)
+                    } else {
+                        val tag = when (page) {
+                            MarketPage.INDICES -> "indices_refresh"
+                            MarketPage.WEIGHTS -> "weights_refresh"
+                            MarketPage.PUBLIC_BANK -> "gov_bank_refresh"
+                        }
+                        IconButton(onClick = { refresh++ }, enabled = page != MarketPage.PUBLIC_BANK || !jobs.busy, modifier = Modifier.testTag(tag)) {
+                            Icon(painterResource(R.drawable.ic_refresh), contentDescription = "重新整理")
                         }
                     }
                 }
@@ -80,7 +86,7 @@ fun MarketScreen(page: MarketPage, onPage: (MarketPage) -> Unit, onSettings: () 
         when (page) {
             MarketPage.INDICES -> IndicesPage(refresh, onLoading = { loading[MarketPage.INDICES] = it }, onOpen = onOpen)
             MarketPage.WEIGHTS -> WeightsPage(refresh, onLoading = { loading[MarketPage.WEIGHTS] = it })
-            MarketPage.PUBLIC_BANK -> PublicBankPage(onOpen)
+            MarketPage.PUBLIC_BANK -> PublicBankPage(refresh, onOpen)
         }
     }
 }

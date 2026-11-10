@@ -12,6 +12,9 @@
 | `tdcc-week.html` | 集保 `qryStock` 查一檔一週的結果（POST） | `HoldersParseTest`：15 級表格 |
 | `taifex-weights.html` | 期交所 `futuresQADetail` | `WeightsParseTest` |
 | `yahoo-spark.json` | Yahoo `v7/finance/spark`（8 個指數、`range=1d`），2026-11-08 週日在 VM 錄的（VM 連得到 Yahoo），11/06 那天的盤 | `IndicesParseTest` |
+| `blave-gov-bank-2330.json` | blave `studio/charts/twstock/gov_bank/2330?start=2026-11-02&end=2026-11-09`（八大官股，非官方），2026-11-10 在使用者電腦上錄的 | `GovBankParseTest` |
+| `histock-broker8.html` | HiStock `stock/broker8.aspx`（八大官股全市場，非官方），2026-11-10 下午錄的，最新是 11/09 | `GovBankParseTest` |
+| `histock-broker-3131.html` | HiStock `stock/broker.aspx?no=3131`（上櫃弘塑的八大官股個股頁，非官方；blave 沒有上櫃股），2026-11-10 下午在 VM 錄的（換行轉成 LF），最新是 11/09 | `GovBankParseTest` |
 
 錄好之後：
 

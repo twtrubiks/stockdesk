@@ -17,12 +17,15 @@ import java.time.temporal.TemporalAdjusters
 import java.util.concurrent.CopyOnWriteArrayList
 
 /**
- * 模擬器上假裝官方來源的 MockWebServer（CI 不連外）。回應用 core testFixtures 的 [Samples] 現造（照實測格式，數字是假的）：
+ * 模擬器上假裝資料來源的 MockWebServer（App 抓資料都打這裡）。回應用 core testFixtures 的 [Samples] 現造（照實測格式，數字是假的）：
  *   /rwd/zh/marginTrading/MI_MARGN → 證交所：平日有 2330、2317，週六日休市
  *   /www/zh-tw/margin/balance      → 櫃買：平日有 6515、8299，週六日休市
  *   /portal/zh/smWeb/qryStock      → 集保（[FakeTdcc]：token 綁 session cookie）：GET 查詢頁（最近 10 個星期五），POST 任何代號都有 15 級
  *   /cht/9/futuresQADetail         → 期交所：上個月底的權重表（1,070 檔）
  *   /v7/finance/spark              → Yahoo：8 個國際指數，台股是今天盤中（到 11:00），其他是前一個平日收盤
+ *   /studio/charts/twstock/gov_bank/<代號> → blave：上櫃的（[OTC]，跟上面櫃買同兩檔）回空的（實測 blave 沒有上櫃股），其他代號都有最近幾個平日的八大官股
+ *   /stock/broker8.aspx            → HiStock：最近 20 個平日的八大官股總額 ＋ 買超、賣超前 5 名
+ *   /stock/broker.aspx?no=<代號>    → HiStock 的個股頁：任何代號都有最近 40 個平日的八大官股（只有淨額）
  * App 走 debug 版的 network security config 才連得到這裡的 http://localhost（`src/debug/res/xml/network_security_config.xml`）。
  * fixture 錄好之後可以改成回錄好的真實回應（放 `androidTest/assets/`）。
  */
@@ -51,11 +54,14 @@ class FakeSources : AutoCloseable {
                 requests += "${request.method} ${request.target}"
                 val url = request.url
                 if (url.encodedPath == "/portal/zh/smWeb/qryStock") return tdcc(request)
+                if (url.encodedPath.startsWith(GOV_BANK_PATH)) return json(blave(url.encodedPath.removePrefix(GOV_BANK_PATH)))
                 val body = when (url.encodedPath) {
                     "/rwd/zh/marginTrading/MI_MARGN" -> twse(LocalDate.parse(url.queryParameter("date")!!, DateTimeFormatter.BASIC_ISO_DATE))
                     "/www/zh-tw/margin/balance" -> tpex(LocalDate.parse(url.queryParameter("date")!!, DateTimeFormatter.ofPattern("yyyy/MM/dd")))
                     "/cht/9/futuresQADetail" -> Samples.taifexWeights(today.withDayOfMonth(1).minusDays(1), Samples.constituents())
                     "/v7/finance/spark" -> yahoo()
+                    "/stock/broker8.aspx" -> histock()
+                    "/stock/broker.aspx" -> histockStock(url.queryParameter("no").orEmpty())
                     else -> return MockResponse(404, Headers.headersOf(), "FakeSources：沒有 ${url.encodedPath}")
                 }
                 return MockResponse(200, Headers.headersOf("Content-Type", "text/plain; charset=utf-8"), body)
@@ -70,8 +76,62 @@ class FakeSources : AutoCloseable {
             tdcc = "$base/portal/zh/smWeb/qryStock",
             taifex = "$base/cht/9/futuresQADetail",
             yahoo = "$base/v7/finance/spark",
+            blave = base,
+            histock = "$base/stock/broker8.aspx",
+            histockStock = "$base/stock/broker.aspx",
         )
     }
+
+    private fun json(body: String) = MockResponse(200, Headers.headersOf("Content-Type", "application/json"), body)
+
+    /** 最近 [n] 個平日（新到舊，今天是平日就含今天）。 */
+    private fun weekdays(n: Int) = generateSequence(today) { it.minusDays(1) }.filter { !weekend(it) }.take(n).toList()
+
+    /** 八大官股：每檔每天的張數不一樣、有買超有賣超，價錢隨代號給一個。上櫃的回空的 data（App 會改抓 HiStock 的個股頁）。 */
+    private fun blave(code: String): String {
+        if (code in OTC) return Samples.blaveGovBank(code, emptyMap())
+        val seed = code.sumOf { it.code }
+        val price = 100.0 + seed % 900
+        return Samples.blaveGovBank(
+            code,
+            weekdays(8).associateWith { d ->
+                val k = (d.toEpochDay() + seed) % 7
+                Samples.govBankFlows(buyLots = 800 + k * 150, sellLots = 1_000 - k * 60, price = price)
+            },
+        )
+    }
+
+    /** HiStock 的個股頁：最近 40 個平日，每天的張數不一樣、有買超有賣超（萬元 ＝ 張 × 價錢 ÷ 10）。 */
+    private fun histockStock(code: String): String {
+        val seed = code.sumOf { it.code }
+        val price = 100L + seed % 900
+        return Samples.histockStockGovBank(
+            code,
+            code,
+            weekdays(40).map { d ->
+                val lots = ((d.toEpochDay() + seed) % 7 - 3) * 45 + 12
+                Samples.StockDaySample(d, lots, lots * price / 10)
+            },
+        )
+    }
+
+    private fun histock(): String = Samples.histockBroker8(
+        weekdays(20).map { d -> d to ((d.toEpochDay() % 9) - 3) * 37.5 + 12.25 },
+        topBuy = listOf(
+            Samples.RankSample("2330", "台積電", 213_162),
+            Samples.RankSample("0050", "元大台灣50", 138_302),
+            Samples.RankSample("3037", "欣興", 125_116),
+            Samples.RankSample("3189", "景碩", 92_198),
+            Samples.RankSample("2303", "聯電", 75_997),
+        ),
+        topSell = listOf(
+            Samples.RankSample("2327", "國巨*", -69_172),
+            Samples.RankSample("2317", "鴻海", -43_662),
+            Samples.RankSample("2886", "兆豐金", -34_257),
+            Samples.RankSample("2395", "研華", -21_004),
+            Samples.RankSample("2454", "聯發科", -18_880),
+        ),
+    )
 
     private fun weekend(d: LocalDate) = d.dayOfWeek == DayOfWeek.SATURDAY || d.dayOfWeek == DayOfWeek.SUNDAY
 
@@ -123,4 +183,11 @@ class FakeSources : AutoCloseable {
     }
 
     override fun close() = server.close()
+
+    private companion object {
+        const val GOV_BANK_PATH = "/studio/charts/twstock/gov_bank/"
+
+        /** 假的上櫃股（櫃買的融資融券也是這兩檔）：blave 回空的。 */
+        val OTC = setOf("6515", "8299")
+    }
 }
