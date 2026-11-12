@@ -2,6 +2,7 @@ package com.twtrubiks.stockdesk
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.uiautomator.By
+import com.twtrubiks.stockdesk.core.govbank.GovBankVia
 import com.twtrubiks.stockdesk.core.model.Market
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -13,8 +14,8 @@ import org.junit.runner.RunWith
 /**
  * 錄影用的展示流程，CI 只錄這個 class，`scripts/ci/record.sh` 會在執行期間錄下整個螢幕。
  * 資料來源換成模擬器上的 [FakeSources]（MockWebServer，回 [com.twtrubiks.stockdesk.core.Samples] 造的假回應）。
- * 走自選股（加兩檔）→ goodinfo（2330 的融資融券與持股分級按「抓」，再按「全部抓取」（2330 讀快取、6515 上櫃真的抓），全部收合再點 2330 展開）→ 社群（點一檔開內建瀏覽器頁，看得到網站的標題，內容通常還沒畫出來，再關掉）
- * → 大盤（國際指數 → 權重（進頁面自動抓）→ 官股（進頁面自動抓全市場與兩檔自選股），點 2330 開內建瀏覽器頁再關掉）
+ * 走自選股（加兩檔）→ goodinfo（2330 的融資融券・官股與持股分級按「抓」，再按「全部抓取」（2330 讀快取、6515 上櫃真的抓），全部收合再點 2330 展開）→ 社群（點一檔開內建瀏覽器頁，看得到網站的標題，內容通常還沒畫出來，再關掉）
+ * → 大盤（國際指數 → 權重（進頁面自動抓）→ 官股（進頁面自動抓全市場））
  * → 自選股（每檔底下多一行官股）→ 設定。全長控制在 150 秒內。
  */
 @RunWith(AndroidJUnit4::class)
@@ -59,26 +60,30 @@ class DemoRecordingTest : UiTest() {
         pause(1500)
         screenshot("03-goodinfo")
 
-        // 融資融券：假的證交所，近 3 個交易日（每發隔 2 秒以上，週末多打兩天休市）
+        // 融資融券・官股：假的證交所，近 3 個交易日（每發隔 2 秒以上，週末多打兩天休市），再假的 blave 一發；併成一張表
         find(res("fetch_margin_2330")).click()
-        waitFor(By.text("融資餘額"), timeout = 40_000)
+        waitFor(res("gov_bank_link_2330"), timeout = 40_000)
+        waitFor(By.text("融資餘額"))
         pause(1500)
         screenshot("04-margin")
 
         // 股東持股分級：假的集保（token 綁 session cookie，沒帶 cookie 就回空表），查詢頁 ＋ 近 2 週
         find(res("fetch_holders_2330").enabled(true)).click()
-        waitFor(By.text("各級持股比例（%）"), timeout = 30_000)
+        // 等週表的表頭：融資融券・官股的表格比較高，底下的「各級持股比例」在畫面外，UiAutomator 找不到
+        waitFor(By.text("股東人數"), timeout = 30_000)
         pause(2000)
         screenshot("05-holders")
 
-        // 全部抓取：2330 的兩項剛抓過（全讀快取、不停頓），6515（上櫃）照順序抓假的櫃買、再抓假的集保（中間隨機停 0.5～1.5 秒）
+        // 全部抓取：2330 的兩項剛抓過（全讀快取、不停頓），6515（上櫃）照順序抓假的櫃買、八大官股（blave 回空的，改抓假的 HiStock 個股頁）、
+        // 再抓假的集保（中間隨機停 0.5～1.5 秒）
         find(res("fetch_all").enabled(true)).click()
         waitFor(res("fetch_all_progress"))
         waitGone(res("fetch_all_progress"), timeout = 60_000)
         val jobs = container.jobs
         assertEquals(JobState.Ready(Unit), jobs.all)
         val margin6515 = jobs.margin["6515"]
-        assertTrue("6515 的融資融券：$margin6515", margin6515 is JobState.Ready && margin6515.value.market == Market.TPEX && margin6515.value.rows.size == 3)
+        assertTrue("6515 的融資融券：$margin6515", margin6515 is JobState.Ready && margin6515.value.market == Market.TPEX && margin6515.value.rows.count { it.margin != null } == 3)
+        assertTrue("6515 的八大官股：$margin6515", margin6515 is JobState.Ready && margin6515.value.govVia == GovBankVia.HISTOCK && margin6515.value.rows.any { it.gov != null })
         val holders6515 = jobs.holders["6515"]
         assertTrue("6515 的持股分級：$holders6515", holders6515 is JobState.Ready && holders6515.value.size == 2)
         // 2330 收起來，看得到 6515 剛抓到的結果（上櫃）
@@ -118,20 +123,11 @@ class DemoRecordingTest : UiTest() {
         waitFor(By.text("台積電"), timeout = 30_000)
         pause(2000)
         screenshot("10-weights")
-        // 官股：假的 HiStock 一發、假的 blave 兩檔各一發（隔 2 秒）；6515 在 FakeSources 是上櫃，blave 回空的，
-        // 改抓假的 HiStock 個股頁（跟全市場同一台主機，再隔 2 秒）。抓完才有自選股合計那一列
+        // 官股：只有全市場，假的 HiStock 一發（自選股每一檔的在 goodinfo 分頁抓過了）
         find(res("market_public_bank")).click()
-        waitFor(res("gov_bank_total"), timeout = 30_000)
-        waitFor(res("gov_bank_market"))
+        waitFor(res("gov_bank_market"), timeout = 30_000)
         pause(2000)
         screenshot("11-public-bank")
-        find(res("gov_bank_2330")).click()
-        waitFor(res("browser_close"))
-        pause(1500)
-        find(res("browser_close")).click()
-        // 關掉瀏覽器回來還是官股那一頁
-        waitFor(res("gov_bank_2330"))
-        pause(1000)
 
         // 自選股：每檔底下一行官股最新一天的買賣超（剛剛抓的快取）
         find(res("tab_watchlist")).click()

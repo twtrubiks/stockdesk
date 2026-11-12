@@ -4,10 +4,7 @@ import com.twtrubiks.stockdesk.core.http.Http
 import com.twtrubiks.stockdesk.core.http.Pacer
 import com.twtrubiks.stockdesk.core.http.Taipei
 import com.twtrubiks.stockdesk.core.http.USER_AGENT
-import com.twtrubiks.stockdesk.core.model.StockRef
 import com.twtrubiks.stockdesk.core.store.CacheStore
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -89,47 +86,34 @@ data class GovBankMarket(
 }
 
 /**
- * 自選股的一檔：最近幾個交易日（新到舊，沒抓過是空的）。[note] 是這一檔這次沒抓到的原因（blave、HiStock 都沒有這一檔、代號無效）；
- * [via] 是資料從哪裡來（官股頁點這一檔開那一家的網頁）。
+ * 一檔抓完的結果：最近幾個交易日（新到舊，沒有資料是空的）。goodinfo 卡片的「融資融券・官股」用。
+ * [via] 是資料從哪裡來（開那一家的網頁）；[note] 是這一檔自己的問題（blave、HiStock 都沒有這一檔、代號無效、個股頁改版）；
+ * [stop] 是來源沒回應、被限流（「全部抓取」看到就不再打八大官股），[days] 是快取裡上次的；[cached] 是這次沒有連網。
  */
-data class StockGovBank(val stock: StockRef, val days: List<GovBankDay>, val note: String? = null, val via: GovBankVia = GovBankVia.BLAVE) {
+data class StockGovBank(
+    val code: String,
+    val days: List<GovBankDay>,
+    val via: GovBankVia = GovBankVia.BLAVE,
+    val note: String? = null,
+    val stop: String? = null,
+    val cached: Boolean = false,
+) {
     val latest: GovBankDay? get() = days.firstOrNull()
 }
 
-/** 自選股在 [date] 那天的合計：那天有資料的 [count] 檔加起來。 */
-data class WatchlistTotal(val date: String, val count: Int, val netShares: Long, val netAmount: Double) {
-    val netLots: Long get() = (netShares / 1000.0).roundToLong()
-}
-
 /**
- * 官股頁要顯示的。
+ * 官股頁要顯示的（全市場）。
  * [market] 是 HiStock 的全市場（抓不到又沒有舊的就是 null，原因在 [marketNote]；重抓失敗但有舊的，[marketNote] 是提示）。
  * [fetchedAt] 是最近一次真的連網的時間（台北）；[cached] 是這次完全沒有連網。
- * [warning] 是自選股抓到一半停下來的原因（沒回應、被限流）：還沒抓的那幾檔顯示快取裡的舊資料。
  */
 data class GovBank(
     val market: GovBankMarket?,
     val marketNote: String?,
-    val stocks: List<StockGovBank>,
     val fetchedAt: String?,
     val cached: Boolean,
-    val warning: String? = null,
-) {
-    /** 自選股的合計：自選股裡最新的那一天、那天有資料的檔加起來（那天沒成交、還沒更新的檔不算在裡面）。 */
-    fun watchlistTotal(): WatchlistTotal? {
-        val date = stocks.mapNotNull { it.latest?.date }.maxOrNull() ?: return null
-        val rows = stocks.mapNotNull { s -> s.days.firstOrNull { it.date == date } }
-        return WatchlistTotal(date, rows.size, rows.sumOf { it.netShares }, rows.sumOf { it.netAmount })
-    }
-}
+)
 
 class GovBankException(message: String, val stop: Boolean = false) : Exception(message)
-
-/** 抓的過程中一步一步回報（第 1 步是全市場，之後一檔一步）；最後一個是 [Done]。 */
-sealed interface GovBankEvent {
-    data class Progress(val done: Int, val total: Int, val label: String, val cached: Boolean) : GovBankEvent
-    data class Done(val result: GovBank) : GovBankEvent
-}
 
 /**
  * 八大官股的買賣超。**兩個來源都不是官方的**（證交所、櫃買的券商分點日報表要過圖形驗證碼，不抓）：
@@ -137,19 +121,17 @@ sealed interface GovBankEvent {
  * - 全市場：HiStock 的 `stock/broker8.aspx`（八大官股銀行／公股行庫買賣超排名），一發。頁面裡嵌著每天的買賣超總金額
  *   （`loadChart({"SumMoney":"[[epoch 毫秒, 億元], …]"})`，約半年）與最新一天買超、賣超前 30 名
  * - 自選股每一檔：blave 網頁用的 `studio/charts/twstock/gov_bank/<代號>?start=&end=`（不用登入；一發最多 31 天，
- *   沒登入只給最近 3 個月）。一列一家券商一天，這裡加成一天一筆。一檔一發，照順序打。
+ *   沒登入只給最近 3 個月）。一列一家券商一天，這裡加成一天一筆。一檔一發。
  *   **blave 只有上市股票**（上櫃股回 200 ＋ 空的 data）：空的就改抓 HiStock 的個股頁 `stock/broker.aspx?no=<代號>`
  *   （上市、上櫃都有，約 3 個月，只有淨額），HiStock 有資料就記住這一檔走 HiStock（[GovBankVia]），之後直接抓 HiStock
  *
- * 什麼時候要抓（進頁面時；[load] 的 force 是重新整理，全部重抓）：
+ * 全市場（[market]，官股頁進頁面時）與個股（[stock]，goodinfo 卡片的「抓」）各抓各的。什麼時候要連網（force 是全部重抓）：
  * - 「該公布的那天」：平日 18:30（台北）以後是今天，以前是前一個平日（[publishedDate]）
- * - 全市場：快取的最新一天 ≥ 該公布的那天就不抓；否則抓，[RETRY_MS] 內抓過也先不抓（還沒公布、假日）
- * - 個股：目標是全市場這次拿到的最新一天（假日、還沒公布都跟著它；全市場拿不到才用該公布的那天），
- *   快取的最新一天 ≥ 目標就不抓，[RETRY_MS] 內抓過也不抓（那天沒成交、blave 比 HiStock 晚更新）
+ * - 快取的最新一天 ≥ 該公布的那天就不抓；沒到的話 [RETRY_MS] 內抓過也先不抓（還沒公布、假日、那天沒成交、blave 比 HiStock 晚更新）
  *
- * 每個主機一個 [Pacer]（各 2 秒，HiStock 的全市場與個股頁共用一個）。blave 沒回應、HTTP 429／503（上游配額用完）、格式不對就停下來，
- * 後面的檔顯示快取；HiStock 的個股頁沒回應、HTTP 錯誤也停。代號無效（400）、兩邊都沒有資料、HiStock 個股頁的格式不對只記在那一檔，
- * 繼續抓下一檔。HiStock 的全市場抓不到不影響個股。
+ * 每個主機一個 [Pacer]（各 2 秒，HiStock 的全市場與個股頁共用一個）。blave 沒回應、HTTP 429／503（上游配額用完）、格式不對，
+ * HiStock 的個股頁沒回應、HTTP 錯誤：[StockGovBank.stop]。代號無效（400）、兩邊都沒有資料、HiStock 個股頁的格式不對只是那一檔的
+ * [StockGovBank.note]。
  *
  * 快取：個股以 (代號, 日期) 存 `gov_bank_days`（只留 [KEEP_CALENDAR_DAYS] 天），全市場整份存 `meta`，抓取時間也在 `meta`。
  * `blaveBase`、`histockUrl`、`histockStockUrl` 可以換（測試接 MockWebServer）。
@@ -164,72 +146,61 @@ class GovBankSource(
     private val histockStockUrl: String = "https://histock.tw/stock/broker.aspx",
     private val now: () -> Long = System::currentTimeMillis,
 ) {
-    fun load(stocks: List<StockRef>, force: Boolean = false): Flow<GovBankEvent> = flow {
+    /** 全市場（HiStock 一發）。該公布的那天已經有了就只讀快取。抓不到不丟例外，原因在 [GovBank.marketNote]。 */
+    suspend fun market(force: Boolean = false): GovBank {
         val t = now()
-        val total = stocks.size + 1
-        var fetchedAny = false
-
-        // 1. 全市場（HiStock）
-        val oldMarket = cachedMarket(cache)
-        val oldMarketAt = cache.meta(META_MARKET_FETCHED)?.toLongOrNull()
-        val marketFresh = !force && oldMarket != null && oldMarketAt != null &&
-            fresh(oldMarket.latest?.date, oldMarketAt, publishedDate(t).toString(), t)
-        var market = oldMarket
-        var marketOk = marketFresh
-        var marketNote: String? = null
-        if (!marketFresh) {
-            try {
-                val m = fetchMarket()
-                cache.putMeta(META_MARKET, json.encodeToString(m))
-                cache.putMeta(META_MARKET_FETCHED, now().toString())
-                market = m
-                marketOk = true
-                fetchedAny = true
-            } catch (e: GovBankException) {
-                marketNote = failNote(e.message ?: "抓取失敗", oldMarket != null)
-            } catch (e: IOException) {
-                marketNote = failNote("HiStock 沒回應（${e.message ?: e.javaClass.simpleName}）", oldMarket != null)
-            }
+        val old = cachedMarket(cache)
+        val oldAt = cache.meta(META_MARKET_FETCHED)?.toLongOrNull()
+        val isFresh = !force && old != null && oldAt != null && fresh(old.latest?.date, oldAt, publishedDate(t).toString(), t)
+        if (isFresh) return GovBank(old, null, marketFetched(cache), cached = true)
+        var market = old
+        var note: String? = null
+        var fetched = false
+        try {
+            val m = fetchMarket()
+            cache.putMeta(META_MARKET, json.encodeToString(m))
+            cache.putMeta(META_MARKET_FETCHED, now().toString())
+            market = m
+            fetched = true
+        } catch (e: GovBankException) {
+            note = failNote(e.message ?: "抓取失敗", old != null)
+        } catch (e: IOException) {
+            note = failNote("HiStock 沒回應（${e.message ?: e.javaClass.simpleName}）", old != null)
         }
-        emit(GovBankEvent.Progress(1, total, "全市場", cached = marketFresh))
+        return GovBank(market, note, marketFetched(cache), cached = !fetched)
+    }
 
-        // 2. 自選股一檔一發（blave）
-        val target = market?.latest?.date?.takeIf { marketOk } ?: publishedDate(t).toString()
-        val results = mutableListOf<StockGovBank>()
-        var stopped: String? = null
-        for ((i, s) in stocks.withIndex()) {
-            val old = cache.govBankDays(s.code, KEEP_DAYS)
-            val at = cache.meta(fetchedKey(s.code))?.toLongOrNull()
-            val isFresh = !force && at != null && fresh(old.firstOrNull()?.date, at, target, t)
-            if (isFresh || stopped != null) {
-                results += StockGovBank(s, old, via = via(cache, s.code))
-                emit(GovBankEvent.Progress(i + 2, total, s.label, cached = true))
-                continue
-            }
-            var note: String? = null
-            try {
-                val days = fetchStock(s.code, t)
-                cache.putGovBankDays(s.code, days, keepSince = LocalDate.parse(target).minusDays(KEEP_CALENDAR_DAYS))
-                cache.putMeta(fetchedKey(s.code), now().toString())
-                fetchedAny = true
-                if (days.isEmpty()) note = "blave、HiStock 都沒有這一檔的八大官股資料（興櫃、停止交易，或代號不對）"
-            } catch (e: GovBankException) {
-                if (e.stop) {
-                    stopped = e.message
-                } else {
-                    note = e.message
-                    // 代號無效之類的：記下抓過的時間，不要每次進頁面都再問一次
-                    cache.putMeta(fetchedKey(s.code), now().toString())
-                    fetchedAny = true
-                }
-            } catch (e: IOException) {
-                stopped = "blave 沒回應，可能被限流，過一陣子再試（${e.message ?: e.javaClass.simpleName}）"
-            }
-            results += StockGovBank(s, cache.govBankDays(s.code, KEEP_DAYS), note, via(cache, s.code))
-            emit(GovBankEvent.Progress(i + 2, total, s.label, cached = false))
+    /**
+     * 一檔最近 [days] 個交易日（新到舊）。該公布的那天已經有了（或 [RETRY_MS] 內問過）就只讀快取。
+     * 不丟例外：這一檔自己的問題在 [StockGovBank.note]，來源沒回應在 [StockGovBank.stop]（[StockGovBank.days] 是快取裡上次的）。
+     */
+    suspend fun stock(code: String, days: Int = KEEP_DAYS, force: Boolean = false): StockGovBank {
+        val t = now()
+        val target = publishedDate(t).toString()
+        val old = cache.govBankDays(code, days)
+        val at = cache.meta(fetchedKey(code))?.toLongOrNull()
+        if (!force && at != null && fresh(old.firstOrNull()?.date, at, target, t)) {
+            return StockGovBank(code, old, via(cache, code), note = NO_DATA.takeIf { old.isEmpty() }, cached = true)
         }
-
-        emit(GovBankEvent.Done(GovBank(market, marketNote, results, lastFetched(cache, stocks), cached = !fetchedAny, warning = stopped)))
+        var note: String? = null
+        var stop: String? = null
+        try {
+            val fetched = fetchStock(code, t)
+            cache.putGovBankDays(code, fetched, keepSince = LocalDate.parse(target).minusDays(KEEP_CALENDAR_DAYS))
+            cache.putMeta(fetchedKey(code), now().toString())
+            if (fetched.isEmpty()) note = NO_DATA
+        } catch (e: GovBankException) {
+            if (e.stop) {
+                stop = e.message
+            } else {
+                note = e.message
+                // 代號無效之類的：記下抓過的時間，不要每次按都再問一次
+                cache.putMeta(fetchedKey(code), now().toString())
+            }
+        } catch (e: IOException) {
+            stop = "blave 沒回應，可能被限流，過一陣子再試（${e.message ?: e.javaClass.simpleName}）"
+        }
+        return StockGovBank(code, cache.govBankDays(code, days), via(cache, code), note, stop, cached = false)
     }
 
     /** 抓 HiStock 的八大官股頁。 */
@@ -299,8 +270,10 @@ class GovBankSource(
         /** 一檔一發要幾天（日曆日，blave 一發最多 31 天）：約 14 個交易日。 */
         const val RANGE_DAYS = 20
 
-        /** 畫面上一檔最多讀幾天。 */
+        /** 一檔預設讀幾天。 */
         const val KEEP_DAYS = 10
+
+        const val NO_DATA = "blave、HiStock 都沒有這一檔的八大官股資料（興櫃、停止交易，或代號不對）"
 
         /** 快取裡一檔只留這麼多天（日曆日）。 */
         const val KEEP_CALENDAR_DAYS = 90L
@@ -349,14 +322,8 @@ class GovBankSource(
 
         private fun failNote(message: String, hasOld: Boolean) = if (hasOld) "重抓失敗（$message），顯示上次的資料" else message
 
-        /** 只讀快取、不連網：自選股分頁與官股頁一進來先顯示這個。不用建 [GovBankSource]（不會因此建立 OkHttpClient）。 */
-        fun cached(cache: CacheStore, stocks: List<StockRef>): GovBank = GovBank(
-            cachedMarket(cache),
-            null,
-            stocks.map { StockGovBank(it, cache.govBankDays(it.code, KEEP_DAYS), via = via(cache, it.code)) },
-            lastFetched(cache, stocks),
-            cached = true,
-        )
+        /** 只讀快取、不連網：官股頁一進來先顯示這個。不用建 [GovBankSource]（不會因此建立 OkHttpClient）。 */
+        fun cached(cache: CacheStore): GovBank = GovBank(cachedMarket(cache), null, marketFetched(cache), cached = true)
 
         /** 每一檔快取裡最新的一天（沒抓過的不在裡面）。自選股分頁每列底下那一行用。 */
         fun latest(cache: CacheStore, codes: List<String>): Map<String, GovBankDay> =
@@ -365,11 +332,7 @@ class GovBankSource(
         private fun cachedMarket(cache: CacheStore): GovBankMarket? =
             cache.meta(META_MARKET)?.let { runCatching { json.decodeFromString<GovBankMarket>(it) }.getOrNull() }
 
-        private fun lastFetched(cache: CacheStore, stocks: List<StockRef>): String? {
-            val ats = listOfNotNull(cache.meta(META_MARKET_FETCHED)?.toLongOrNull()) +
-                stocks.mapNotNull { cache.meta(fetchedKey(it.code))?.toLongOrNull() }
-            return ats.maxOrNull()?.let(Taipei::stamp)
-        }
+        private fun marketFetched(cache: CacheStore): String? = cache.meta(META_MARKET_FETCHED)?.toLongOrNull()?.let(Taipei::stamp)
 
         /**
          * blave：`{"data":[{"bank_name":"兆豐","buy":716188,"buy_amount":1670269710.0,"date":"2026-11-02","sell":338301,"sell_amount":789166250.0,"stock_id":"2330"}, …], "history_tier":"anon", …}`。

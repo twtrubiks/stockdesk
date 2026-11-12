@@ -2,7 +2,9 @@ package com.twtrubiks.stockdesk
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,9 +17,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -28,15 +32,15 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.twtrubiks.stockdesk.core.govbank.GovBank
 import com.twtrubiks.stockdesk.core.govbank.GovBankMarket
 import com.twtrubiks.stockdesk.core.govbank.GovBankVia
-import com.twtrubiks.stockdesk.core.govbank.StockGovBank
 import com.twtrubiks.stockdesk.core.govbank.RankRow
 import com.twtrubiks.stockdesk.core.holders.HolderWeek
 
@@ -127,28 +131,109 @@ private fun SectionCaption(title: String, unit: String, tag: String? = null) {
 
 // --- 融資融券 -----------------------------------------------------------------------
 
-/** 新到舊，一列一天：日期｜融資餘額（增減）｜融券餘額（增減）｜資使用率｜券資比。 */
+/** 融資融券表的一列：平常照比例分寬度；[wide]（欄位超出螢幕）時日期固定在左邊，右邊的數字欄左右拖，每一列共用 [scroll]。 */
 @Composable
-fun MarginTable(result: MarginResult) {
+private fun MarginLine(wide: Boolean, scroll: ScrollState, modifier: Modifier, date: @Composable (Modifier) -> Unit, cells: @Composable RowScope.() -> Unit) {
+    Row(modifier, verticalAlignment = Alignment.CenterVertically) {
+        if (wide) {
+            date(Modifier.width(48.dp))
+            Row(Modifier.weight(1f).horizontalScroll(scroll), verticalAlignment = Alignment.CenterVertically, content = cells)
+        } else {
+            date(Modifier.weight(0.8f))
+            cells()
+        }
+    }
+}
+
+/** 一欄的寬度：[wide] 時用固定寬度（可以左右拖），不然照比例。 */
+private fun RowScope.col(wide: Boolean, weight: Float, width: Dp): Modifier = if (wide) Modifier.width(width) else Modifier.weight(weight)
+
+@Composable
+private fun HeadText(text: String, modifier: Modifier, align: TextAlign = TextAlign.End) {
+    Text(text, modifier, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = align, maxLines = 1)
+}
+
+/** 一格數字：上面是值，下面一行小字（增減，或官股的金額）。[valueColor] 沒給就用一般文字色。 */
+@Composable
+private fun NumCell(modifier: Modifier, value: String, sub: String? = null, subValue: Double? = null, bold: Boolean = false, valueColor: Color = Color.Unspecified) {
+    Column(modifier, horizontalAlignment = Alignment.End) {
+        Text(value, style = numStyle(MaterialTheme.typography.bodyMedium).copy(fontWeight = if (bold) FontWeight.SemiBold else FontWeight.Normal), color = valueColor, maxLines = 1)
+        if (sub != null) Text(sub, style = numStyle(MaterialTheme.typography.labelSmall), color = changeColor(subValue), maxLines = 1)
+    }
+}
+
+/**
+ * 融資融券＋八大官股併成一張表。新到舊，一列一天：日期｜融資餘額（增減）｜融券餘額（增減）｜官股（買賣超張數，底下一行小字是金額，
+ * 各看各的正負上色）；[showRatios]（設定頁打勾）才多出 資使用率｜券資比 兩欄，接在最後面。六欄手機放不下：日期固定在左邊，
+ * 右邊的數字欄左右拖。官股比融資融券早公布：最上面可能有幾列只有官股（融資融券的欄位是「-」）；那天官股沒有資料就寫「-」。
+ * 這次沒抓官股（[MarginResult.hasGov] 是 false）就沒有官股那一欄。
+ * 兩邊各自的錯誤寫在表格底下，一邊失敗另一邊照樣顯示。最底下一行點了 [onOpenGov]（開官股資料來源那一家的網頁）。
+ */
+@Composable
+fun MarginTable(result: MarginResult, showRatios: Boolean, govTag: String, onOpenGov: () -> Unit) {
     Column(Modifier.fillMaxWidth()) {
-        SectionCaption("近 ${result.rows.size} 個交易日", "單位：張", tag = result.market.label)
-        TableBox {
-            HeaderRow {
-                HeaderCell("日期", 0.8f, TextAlign.Start)
-                HeaderCell("融資餘額", 1.25f)
-                HeaderCell("融券餘額", 1.1f)
-                HeaderCell("資使用率", 1f)
-                HeaderCell("券資比", 0.95f)
-            }
-            result.rows.forEachIndexed { i, r ->
-                if (i > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
-                Row(Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 7.dp), verticalAlignment = Alignment.CenterVertically) {
-                    DateCell(r.date, 0.8f)
-                    ValueCell(fmt(r.finBal), fmtSigned(r.finChg), r.finChg.toDouble(), 1.25f, bold = true)
-                    ValueCell(fmt(r.shortBal), fmtSigned(r.shortChg), r.shortChg.toDouble(), 1.1f, bold = true)
-                    ValueCell(fmtPct(r.finUse), weight = 1f)
-                    ValueCell(fmtPct(r.ratio), weight = 0.95f)
+        if (result.rows.isNotEmpty()) {
+            val wide = showRatios && result.hasGov
+            val scroll = rememberScrollState()
+            SectionCaption("近 ${result.rows.size} 個交易日", if (wide) "單位：張・往左拖看後面" else "單位：張", tag = result.market?.label)
+            TableBox {
+                MarginLine(
+                    wide, scroll,
+                    Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceContainerHighest).padding(horizontal = 10.dp, vertical = 6.dp),
+                    date = { HeadText("日期", it, TextAlign.Start) },
+                ) {
+                    HeadText("融資餘額", col(wide, 1.25f, 84.dp))
+                    HeadText("融券餘額", col(wide, 1.1f, 76.dp))
+                    if (result.hasGov) HeadText("官股", col(wide, 1.2f, 88.dp))
+                    if (showRatios) {
+                        HeadText("資使用率", col(wide, 1f, 72.dp))
+                        HeadText("券資比", col(wide, 0.95f, 68.dp))
+                    }
                 }
+                result.rows.forEachIndexed { i, day ->
+                    if (i > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
+                    val r = day.margin
+                    val g = day.gov
+                    MarginLine(
+                        wide, scroll,
+                        Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 7.dp),
+                        date = { Text(shortDate(day.date), it, style = numStyle(MaterialTheme.typography.labelLarge), color = MaterialTheme.colorScheme.onSurface, maxLines = 1) },
+                    ) {
+                        NumCell(col(wide, 1.25f, 84.dp), fmt(r?.finBal), r?.let { fmtSigned(it.finChg) }, r?.finChg?.toDouble(), bold = true)
+                        NumCell(col(wide, 1.1f, 76.dp), fmt(r?.shortBal), r?.let { fmtSigned(it.shortChg) }, r?.shortChg?.toDouble(), bold = true)
+                        if (result.hasGov) {
+                            NumCell(
+                                col(wide, 1.2f, 88.dp),
+                                if (g == null) "-" else fmtSigned(g.netLots),
+                                g?.let { fmtAmount(it.netAmount) },
+                                g?.netAmount,
+                                bold = true,
+                                valueColor = changeColor(g?.netLots?.toDouble()),
+                            )
+                        }
+                        if (showRatios) {
+                            NumCell(col(wide, 1f, 72.dp), fmtPct(r?.finUse))
+                            NumCell(col(wide, 0.95f, 68.dp), fmtPct(r?.ratio))
+                        }
+                    }
+                }
+            }
+        }
+        result.marginError?.let { ErrorBox("融資融券：$it") }
+        result.govNote?.let { ErrorBox("八大官股：$it") }
+        if (result.hasGov) {
+            val source = if (result.govVia == GovBankVia.HISTOCK) "HiStock" else "blave"
+            Row(
+                Modifier.fillMaxWidth().padding(top = 4.dp).clickable(onClickLabel = "開官股網頁", onClick = onOpenGov).padding(vertical = 6.dp).testTag(govTag),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    "官股是八大官股買進 − 賣出（$source，非官方）・看網頁",
+                    Modifier.weight(1f),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Icon(painterResource(R.drawable.ic_open_in_new), contentDescription = null, Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     }
@@ -324,88 +409,6 @@ private fun RankColumn(title: String, rows: List<RankRow>, modifier: Modifier = 
             Row(Modifier.fillMaxWidth().padding(top = 3.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text(r.name, Modifier.weight(1f), style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(fmtAmount(r.netAmount), style = numStyle(MaterialTheme.typography.bodySmall), color = changeColor(r.netAmount), maxLines = 1)
-            }
-        }
-    }
-}
-
-/**
- * 自選股的八大官股：一列一檔，個股｜張｜金額（漲紅跌綠，各看各的正負），最底下是自選股合計（那天有資料的檔）。
- * 點一列 [onOpen] 那一檔（官股頁在內建瀏覽器頁開那一檔的網頁）。最新一天跟合計那天不一樣的檔（那天沒成交、還沒更新）在代號旁邊標日期，
- * 資料來自 HiStock 的（blave 沒有的上櫃股）標「HiStock」；這次沒抓到的原因（兩邊都沒有這一檔）在底下一行小字。
- */
-@Composable
-fun GovBankTable(data: GovBank, onOpen: (StockGovBank) -> Unit) {
-    val total = data.watchlistTotal()
-    Column(Modifier.fillMaxWidth()) {
-        SectionCaption("自選股${total?.let { "・" + shortDate(it.date) } ?: ""}", "買進 − 賣出")
-        TableBox {
-            HeaderRow {
-                HeaderCell("個股", 1.6f, TextAlign.Start)
-                HeaderCell("張", 1f)
-                HeaderCell("金額", 1.2f)
-            }
-            data.stocks.forEachIndexed { i, s ->
-                if (i > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
-                val d = s.latest
-                Row(
-                    Modifier.fillMaxWidth().clickable { onOpen(s) }.padding(horizontal = 10.dp, vertical = 8.dp).testTag("gov_bank_${s.stock.code}"),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Column(Modifier.weight(1.6f)) {
-                        Text(s.stock.name ?: s.stock.code, style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                        val sub = listOfNotNull(
-                            s.stock.code.takeIf { s.stock.name != null },
-                            d?.date?.takeIf { it != total?.date }?.let(::shortDate),
-                            "HiStock".takeIf { s.via == GovBankVia.HISTOCK },
-                        ).joinToString("・")
-                        if (sub.isNotEmpty()) {
-                            Text(sub, style = numStyle(MaterialTheme.typography.labelSmall), color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
-                        }
-                        s.note?.let { Text(it, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.tertiary) }
-                    }
-                    Text(
-                        if (d == null) "-" else fmtSigned(d.netLots),
-                        Modifier.weight(1f),
-                        style = numStyle(MaterialTheme.typography.bodyMedium),
-                        color = changeColor(d?.netLots?.toDouble()),
-                        textAlign = TextAlign.End,
-                        maxLines = 1,
-                    )
-                    Text(
-                        if (d == null) "-" else fmtAmount(d.netAmount),
-                        Modifier.weight(1.2f),
-                        style = numStyle(MaterialTheme.typography.bodyMedium).copy(fontWeight = FontWeight.SemiBold),
-                        color = changeColor(d?.netAmount),
-                        textAlign = TextAlign.End,
-                        maxLines = 1,
-                    )
-                }
-            }
-            if (total != null) {
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                Row(
-                    Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceContainerHighest).padding(horizontal = 10.dp, vertical = 8.dp).testTag("gov_bank_total"),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text("合計（${total.count} 檔）", Modifier.weight(1.6f), style = MaterialTheme.typography.labelLarge)
-                    Text(
-                        fmtSigned(total.netLots),
-                        Modifier.weight(1f),
-                        style = numStyle(MaterialTheme.typography.bodyMedium),
-                        color = changeColor(total.netLots.toDouble()),
-                        textAlign = TextAlign.End,
-                        maxLines = 1,
-                    )
-                    Text(
-                        fmtAmount(total.netAmount),
-                        Modifier.weight(1.2f),
-                        style = numStyle(MaterialTheme.typography.bodyMedium).copy(fontWeight = FontWeight.SemiBold),
-                        color = changeColor(total.netAmount),
-                        textAlign = TextAlign.End,
-                        maxLines = 1,
-                    )
-                }
             }
         }
     }

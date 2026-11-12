@@ -67,10 +67,10 @@ fun WatchlistScreen(onSettings: () -> Unit) {
     suspend fun reload() { stocks = withContext(Dispatchers.IO) { c.watchlist.all() } }
     androidx.compose.runtime.LaunchedEffect(Unit) { reload() }
 
-    // 八大官股最新一天（只讀快取）：清單變了、官股頁抓完了就重讀
+    // 八大官股最新一天（只讀快取）：清單變了、goodinfo 分頁抓完一檔就重讀
     var gov by remember { mutableStateOf<Map<String, GovBankDay>>(emptyMap()) }
-    val govResult = c.jobs.govBankResult
-    androidx.compose.runtime.LaunchedEffect(stocks, govResult) {
+    val govVersion = c.jobs.govStockVersion
+    androidx.compose.runtime.LaunchedEffect(stocks, govVersion) {
         val codes = stocks?.map { it.code } ?: return@LaunchedEffect
         gov = withContext(Dispatchers.IO) { GovBankSource.latest(c.cache, codes) }
     }

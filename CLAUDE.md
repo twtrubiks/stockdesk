@@ -46,7 +46,8 @@ core（純 Kotlin，沒有 Android）
   holders/  HoldersSource：集保 qryStock；一檔一週、token 每發換新、要照順序串
   weights/  WeightsSource：期交所 futuresQADetail；整張表、一天一次
   indices/  IndicesSource：Yahoo v7/finance/spark；8 個國際指數最近一個交易日的 5 分鐘走勢，一發拿全部
-  govbank/  GovBankSource：HiStock 全市場一發 ＋ blave 自選股一檔一發（上櫃股改抓 HiStock 個股頁）
+  govbank/  GovBankSource：HiStock 全市場一發（官股頁）；blave 一檔一發（上櫃股改抓 HiStock 個股頁，goodinfo 卡片跟融資融券一起抓）
+  chips/    ChipDays：融資融券與八大官股照日期併成一張表
   store/    Sql 介面、WatchlistStore（自選股）、CacheStore（快取）
   http/     Http 介面與 OkHttp 實作、Pacer（節流）、Taipei（時區）
   names/    StockNames（resources/stock_names.json）     links/ Links（各網站的網址）

@@ -62,6 +62,9 @@ class AppContainer(private val context: Context, val endpoints: Endpoints = Endp
     val marginDays = IntSetting(settings, "margin_days", 3)
     val holdersWeeks = IntSetting(settings, "holders_weeks", 2)
 
+    /** 融資融券的表格要不要多顯示資使用率、券資比兩欄（預設不顯示）。 */
+    val marginRatios = BoolSetting(settings, "margin_ratios", false)
+
     /** goodinfo 分頁收起來的卡片（代號）。記住到下次打開 App；新加的自選股不在裡面，所以是展開的。 */
     val goodinfoCollapsed = StringSetSetting(settings, "goodinfo_collapsed")
 
@@ -79,7 +82,7 @@ class AppContainer(private val context: Context, val endpoints: Endpoints = Endp
     val weights by lazy { WeightsSource(http, cache, url = endpoints.taifex) }
     val indices by lazy { IndicesSource(http, cache, url = endpoints.yahoo) }
 
-    /** 八大官股（個股 blave，blave 沒有的上櫃股 HiStock 個股頁；全市場 HiStock）。只讀快取的時候用 `GovBankSource.cached(cache, …)`，不用建這個（會建 OkHttpClient）。 */
+    /** 八大官股（個股 blave，blave 沒有的上櫃股 HiStock 個股頁；全市場 HiStock）。只讀快取的時候用 `GovBankSource.cached(cache)`／`latest(cache, …)`，不用建這個（會建 OkHttpClient）。 */
     val govBank by lazy {
         GovBankSource(http, cache, blaveBase = endpoints.blave, histockUrl = endpoints.histock, histockStockUrl = endpoints.histockStock)
     }

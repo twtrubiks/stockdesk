@@ -49,3 +49,13 @@ class IntSetting(private val prefs: SharedPreferences, private val key: String, 
         prefs.edit { putInt(key, value) }
     }
 }
+
+class BoolSetting(private val prefs: SharedPreferences, private val key: String, default: Boolean) {
+    var value by mutableStateOf(prefs.getBoolean(key, default))
+        private set
+
+    fun set(value: Boolean) {
+        this.value = value
+        prefs.edit { putBoolean(key, value) }
+    }
+}

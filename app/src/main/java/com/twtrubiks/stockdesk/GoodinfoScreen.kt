@@ -48,8 +48,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 /**
- * goodinfo 分頁：自選股每一檔一張卡，兩列（融資融券、股東持股分級），每列兩顆按鈕：
- * 「goodinfo」在內建的瀏覽器頁開 goodinfo 對應頁（代號自動帶入）、「抓」向官方來源抓原始資料、結果展開在那檔底下。
+ * goodinfo 分頁：自選股每一檔一張卡，兩列（融資融券・官股、股東持股分級），每列兩顆按鈕：
+ * 「goodinfo」在內建的瀏覽器頁開 goodinfo 對應頁（代號自動帶入）、「抓」向資料來源抓原始資料、結果展開在那檔底下。
+ * 第一列的「抓」一次抓融資融券（官方）與八大官股（blave／HiStock，非官方），照日期併成一張表（[MarginTable]）。
  * 天數／週數在設定頁選（3／5／10 天、2／4／6 週）。一次只跑一個抓取，跑的時候所有「抓」都停用。
  * 標題列的「全部抓取」照順序把每一檔的兩種資料都抓一遍（[FetchJobs.fetchAll]），進度與「取消」在標題列底下。
  * 點卡片的代號名稱那一列收合／展開，標題列有「全部展開」「全部收合」；收起來的代號記在 [AppContainer.goodinfoCollapsed]，
@@ -118,7 +119,7 @@ fun GoodinfoScreen(onSettings: () -> Unit, onOpen: (url: String) -> Unit) {
                     AnimatedVisibility(visible = expanded) {
                         Column(Modifier.padding(start = 14.dp, end = 14.dp, bottom = 12.dp)) {
                             ToolRow(
-                                label = "融資融券",
+                                label = "融資融券・官股",
                                 tag = "fetch_margin_${stock.code}",
                                 busy = jobs.busy,
                                 onOpen = { onOpen(Links.goodinfoMargin(stock.code)) },
@@ -127,7 +128,9 @@ fun GoodinfoScreen(onSettings: () -> Unit, onOpen: (url: String) -> Unit) {
                             when (margin) {
                                 is JobState.Running -> JobProgress(margin)
                                 is JobState.Failed -> ErrorBox(margin.message)
-                                is JobState.Ready -> MarginTable(margin.value)
+                                is JobState.Ready -> MarginTable(margin.value, showRatios = c.marginRatios.value, govTag = "gov_bank_link_${stock.code}") {
+                                    onOpen(govBankLink(stock.code, margin.value.govVia))
+                                }
                                 JobState.Idle -> Unit
                             }
                             HorizontalDivider(Modifier.padding(top = 12.dp), color = MaterialTheme.colorScheme.outlineVariant)
