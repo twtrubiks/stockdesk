@@ -11,10 +11,13 @@ import com.twtrubiks.stockdesk.core.holders.HoldersEvent
 import com.twtrubiks.stockdesk.core.margin.MarginDay
 import com.twtrubiks.stockdesk.core.margin.MarginEvent
 import com.twtrubiks.stockdesk.core.model.Market
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import kotlin.random.Random
 
 /** 一個抓取的狀態，畫面直接讀。 */
 sealed interface JobState<out T> {
@@ -46,25 +49,119 @@ class FetchJobs(private val c: AppContainer) {
         private set
     private var current: Job? = null
 
+    /** goodinfo 分頁的「全部抓取」：整份自選股的融資融券與持股分級。Failed 是有來源沒回應、後面沒抓完。 */
+    var all by mutableStateOf<JobState<Unit>>(JobState.Idle)
+        private set
+
     fun fetchMargin(code: String) = run(code, margin) {
-        val watch = c.watchlist.all().map { it.code }.toSet()
-        c.margin.history(code, c.marginDays.value, watch).onEach { e ->
+        collectMargin(code, c.watchlist.all().map { it.code }.toSet())
+    }
+
+    fun fetchHolders(code: String) = run(code, holders) { collectHolders(code) }
+
+    /** 一檔一個來源抓完的結果。[net]：有連網（不是全部讀快取）；[stop]：來源沒回應的訊息，後面不要再打它。 */
+    private class Step(val net: Boolean, val stop: String?)
+
+    private suspend fun collectMargin(code: String, watch: Set<String>): Step {
+        var net = false
+        var stop: String? = null
+        c.margin.history(code, c.marginDays.value, watch).collect { e ->
             margin[code] = when (e) {
                 is MarginEvent.Progress -> JobState.Running("第 ${e.done}/${e.total} 個交易日 ${e.date}${if (e.cached) "（快取）" else ""}", e.done, e.total)
                 is MarginEvent.Done -> JobState.Ready(MarginResult(e.market, e.rows))
                 is MarginEvent.Failed -> JobState.Failed(e.message)
             }
-        }.collect()
+            if (e is MarginEvent.Progress && !e.cached) net = true
+            if (e is MarginEvent.Failed) {
+                net = true
+                if (e.stop) stop = e.message
+            }
+        }
+        return Step(net, stop)
     }
 
-    fun fetchHolders(code: String) = run(code, holders) {
-        c.holders.history(code, c.holdersWeeks.value).onEach { e ->
+    private suspend fun collectHolders(code: String): Step {
+        var net = false
+        var stop: String? = null
+        c.holders.history(code, c.holdersWeeks.value).collect { e ->
             holders[code] = when (e) {
                 is HoldersEvent.Progress -> JobState.Running("第 ${e.done}/${e.total} 週 ${e.date}${if (e.cached) "（快取）" else ""}", e.done, e.total)
                 is HoldersEvent.Done -> JobState.Ready(e.weeks)
                 is HoldersEvent.Failed -> JobState.Failed(e.message)
             }
-        }.collect()
+            if (e is HoldersEvent.Progress && !e.cached) net = true
+            if (e is HoldersEvent.Failed) {
+                net = true
+                if (e.stop) stop = e.message
+            }
+        }
+        return Step(net, stop)
+    }
+
+    /**
+     * 全部抓取：自選股照順序一檔一檔來，每檔先融資融券、再持股分級，不平行。
+     * 每個主機自己的 [com.twtrubiks.stockdesk.core.http.Pacer] 照樣管請求之間的間隔；這裡另外在「上一步有連網」時
+     * 多停一段隨機的時間（同一檔的兩個來源之間 [STEP_PAUSE_MS]、換下一檔 [STOCK_PAUSE_MS]），每次長短都不一樣；
+     * 上一步全部讀快取就不停。某個來源沒回應（可能被限流）就不再打它，另一個來源繼續；兩個都停了就結束。
+     */
+    fun fetchAll() {
+        if (busy) return
+        busy = true
+        all = JobState.Running("開始抓…")
+        current = c.scope.launch {
+            var code: String? = null
+            try {
+                val stocks = c.watchlist.all()
+                val watch = stocks.map { it.code }.toSet()
+                val total = stocks.size
+                var marginStop: String? = null
+                var holdersStop: String? = null
+                var pause = false // 上一步有連網，下一步之前先停一下
+                for ((i, stock) in stocks.withIndex()) {
+                    if (marginStop != null && holdersStop != null) break
+                    code = stock.code
+                    val label = "${i + 1}/$total ${stock.code} ${stock.name.orEmpty()}".trim()
+                    suspend fun step(name: String, range: LongRange, fetch: suspend () -> Step): String? {
+                        if (pause) {
+                            val ms = Random.nextLong(range.first, range.last + 1)
+                            all = JobState.Running("$label・等 ${"%.1f".format(ms / 1000.0)} 秒", i, total)
+                            delay(ms)
+                        }
+                        all = JobState.Running("$label・$name", i, total)
+                        val result = fetch()
+                        pause = result.net
+                        return result.stop
+                    }
+                    if (marginStop == null) {
+                        margin[stock.code] = JobState.Running("開始抓…")
+                        marginStop = step("融資融券", STOCK_PAUSE_MS) { collectMargin(stock.code, watch) }
+                    }
+                    if (holdersStop == null) {
+                        holders[stock.code] = JobState.Running("開始抓…")
+                        // 這一檔的融資融券沒跑（來源停了）時，上一步是前一檔，照換檔的間隔停
+                        holdersStop = step("股東持股分級", if (marginStop == null) STEP_PAUSE_MS else STOCK_PAUSE_MS) { collectHolders(stock.code) }
+                    }
+                }
+                val stops = listOfNotNull(marginStop?.let { "融資融券：$it" }, holdersStop?.let { "股東持股分級：$it" })
+                all = if (stops.isEmpty()) JobState.Ready(Unit) else JobState.Failed("沒有抓完，後面的檔沒抓。" + stops.joinToString("；"))
+            } catch (e: CancellationException) {
+                // 取消：正在跑的那一檔退回還沒抓的樣子（已經抓到的幾天／幾週在快取裡，再抓秒回）
+                code?.let {
+                    if (margin[it] is JobState.Running) margin.remove(it)
+                    if (holders[it] is JobState.Running) holders.remove(it)
+                }
+                all = JobState.Idle
+                throw e
+            } catch (e: Exception) {
+                code?.let {
+                    if (margin[it] is JobState.Running) margin.remove(it)
+                    if (holders[it] is JobState.Running) holders.remove(it)
+                }
+                all = JobState.Failed(e.message ?: e.javaClass.simpleName)
+            } finally {
+                busy = false
+            }
+        }
     }
 
     /**
@@ -93,9 +190,17 @@ class FetchJobs(private val c: AppContainer) {
         }
     }
 
+    /** 取消正在跑的抓取；[busy] 由那個抓取自己的 finally 放開。 */
     fun cancel() {
         current?.cancel()
-        busy = false
+    }
+
+    private companion object {
+        /** 全部抓取：同一檔兩個來源之間多停的時間（毫秒，隨機）。 */
+        val STEP_PAUSE_MS = 500L..1_500L
+
+        /** 全部抓取：換下一檔之前多停的時間（毫秒，隨機）。 */
+        val STOCK_PAUSE_MS = 1_500L..4_500L
     }
 
     private fun <T> run(code: String, states: MutableMap<String, JobState<T>>, block: suspend () -> Unit) {

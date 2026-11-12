@@ -2,7 +2,10 @@ package com.twtrubiks.stockdesk
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.uiautomator.By
+import com.twtrubiks.stockdesk.core.model.Market
 import org.junit.After
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -10,7 +13,7 @@ import org.junit.runner.RunWith
 /**
  * 錄影用的展示流程，CI 只錄這個 class，`scripts/ci/record.sh` 會在執行期間錄下整個螢幕。
  * 資料來源換成模擬器上的 [FakeSources]（MockWebServer，回 [com.twtrubiks.stockdesk.core.Samples] 造的假回應）。
- * 走自選股（加兩檔）→ goodinfo（2330 的融資融券與持股分級按「抓」，全部收合再點 2330 展開）→ 社群（點一檔開內建瀏覽器頁，看得到網站的標題，內容通常還沒畫出來，再關掉）
+ * 走自選股（加兩檔）→ goodinfo（2330 的融資融券與持股分級按「抓」，再按「全部抓取」（2330 讀快取、6515 上櫃真的抓），全部收合再點 2330 展開）→ 社群（點一檔開內建瀏覽器頁，看得到網站的標題，內容通常還沒畫出來，再關掉）
  * → 大盤（國際指數 → 權重（進頁面自動抓）→ 官股（進頁面自動抓全市場與兩檔自選股），點 2330 開內建瀏覽器頁再關掉）
  * → 自選股（每檔底下多一行官股）→ 設定。全長控制在 150 秒內。
  */
@@ -67,6 +70,22 @@ class DemoRecordingTest : UiTest() {
         waitFor(By.text("各級持股比例（%）"), timeout = 30_000)
         pause(2000)
         screenshot("05-holders")
+
+        // 全部抓取：2330 的兩項剛抓過（全讀快取、不停頓），6515（上櫃）照順序抓假的櫃買、再抓假的集保（中間隨機停 0.5～1.5 秒）
+        find(res("fetch_all").enabled(true)).click()
+        waitFor(res("fetch_all_progress"))
+        waitGone(res("fetch_all_progress"), timeout = 60_000)
+        val jobs = container.jobs
+        assertEquals(JobState.Ready(Unit), jobs.all)
+        val margin6515 = jobs.margin["6515"]
+        assertTrue("6515 的融資融券：$margin6515", margin6515 is JobState.Ready && margin6515.value.market == Market.TPEX && margin6515.value.rows.size == 3)
+        val holders6515 = jobs.holders["6515"]
+        assertTrue("6515 的持股分級：$holders6515", holders6515 is JobState.Ready && holders6515.value.size == 2)
+        // 2330 收起來，看得到 6515 剛抓到的結果（上櫃）
+        find(res("card_header_2330")).click()
+        waitFor(By.text(Market.TPEX.label))
+        pause(1500)
+        screenshot("05b-fetch-all")
 
         // 全部收合：只剩代號名稱；點 2330 那列再展開，剛剛抓的結果還在
         find(res("collapse_all")).click()

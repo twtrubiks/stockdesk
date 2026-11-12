@@ -52,7 +52,8 @@ APK 按 CPU 拆開（GeckoView），模擬器裝的是 `app-x86_64-debug.apk`／
   找元件用 `UiTest.waitFor` 每 0.1 秒輪詢。元件找到之後畫面又重組了，按之前要重新找一次。
   用 `By.text(...)`，要用 testTag 時用 `res("tag")`（root 已開 `testTagsAsResourceId`）。
   每個操作之間停 1～1.5 秒；全長控制在 150 秒內（`screenrecord` 上限 180 秒）。
-  流程：自選股（加 2330、6515）→ goodinfo（2330 的融資融券、持股分級按「抓」）→ 社群（點一檔開內建瀏覽器頁再關掉；看得到網站的標題，內容通常還沒畫出來）
+  流程：自選股（加 2330、6515）→ goodinfo（2330 的融資融券、持股分級按「抓」，再按「全部抓取」：2330 全讀快取，6515 照順序抓假的櫃買與集保，
+  跑完檢查 `FetchJobs` 的狀態（全部抓取 Ready、6515 上櫃 3 天、2 週），收起 2330 截 `05b-fetch-all`）→ 社群（點一檔開內建瀏覽器頁再關掉；看得到網站的標題，內容通常還沒畫出來）
   → 大盤（國際指數 → 權重（進頁面自動抓）→ 官股（進頁面自動抓全市場與兩檔自選股；6515 在 `FakeSources` 是上櫃，blave 回空的、改抓 HiStock 個股頁），
   點 2330 開內建瀏覽器頁再關掉）
   → 自選股（每檔底下多一行官股）→ 設定。
@@ -66,7 +67,7 @@ APK 按 CPU 拆開（GeckoView），模擬器裝的是 `app-x86_64-debug.apk`／
 ### testTag 一覽
 
 `tab_goodinfo`／`tab_forum`／`tab_market`／`tab_watchlist`（底部分頁）、`market_indices`／`market_weights`／`market_public_bank`（大盤的切換鈕）、`settings_button`、`code_input`／`add_button`／`candidates`／`rename_input`／`rename_confirm`（自選股）、
-`fetch_margin_<代號>`／`fetch_holders_<代號>`（goodinfo 卡片上的「抓」）、`card_header_<代號>`（goodinfo 卡片的代號名稱列，點了收合／展開）、`expand_all`／`collapse_all`（goodinfo 標題列）、`forum_<代號>`（社群的每一列）、`gov_bank_market`（官股頁的全市場）、`gov_bank_<代號>`／`gov_bank_total`（官股頁自選股的每一列、合計那一列）、
+`fetch_margin_<代號>`／`fetch_holders_<代號>`（goodinfo 卡片上的「抓」）、`card_header_<代號>`（goodinfo 卡片的代號名稱列，點了收合／展開）、`expand_all`／`collapse_all`／`fetch_all`（goodinfo 標題列）、`fetch_all_progress`／`fetch_all_cancel`（全部抓取的進度與取消）、`forum_<代號>`（社群的每一列）、`gov_bank_market`（官股頁的全市場）、`gov_bank_<代號>`／`gov_bank_total`（官股頁自選股的每一列、合計那一列）、
 `gov_bank_histock`／`public_bank_all`／`public_bank_twse`／`public_bank_tpex`（官股頁最底下的網頁版）、`gov_line_<代號>`（自選股分頁每列底下的官股那一行）、`browser_close`／`browser_external`／`browser_web`／`ublock_button`／`ublock_badge`／`ublock_popup`（內建瀏覽器頁）、`weights_refresh`／`indices_refresh`／`gov_bank_refresh`（大盤標題列的重新整理）、`index_<代號去掉 ^>`（國際指數的卡片，例如 `index_TWII`）、`indices_yahoo`（在 Yahoo 股市看）。
 
 ## 看 CI 的結果

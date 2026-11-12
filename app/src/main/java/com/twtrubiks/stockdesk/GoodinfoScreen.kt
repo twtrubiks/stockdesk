@@ -31,6 +31,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
@@ -50,6 +51,7 @@ import kotlinx.coroutines.withContext
  * goodinfo 分頁：自選股每一檔一張卡，兩列（融資融券、股東持股分級），每列兩顆按鈕：
  * 「goodinfo」在內建的瀏覽器頁開 goodinfo 對應頁（代號自動帶入）、「抓」向官方來源抓原始資料、結果展開在那檔底下。
  * 天數／週數在設定頁選（3／5／10 天、2／4／6 週）。一次只跑一個抓取，跑的時候所有「抓」都停用。
+ * 標題列的「全部抓取」照順序把每一檔的兩種資料都抓一遍（[FetchJobs.fetchAll]），進度與「取消」在標題列底下。
  * 點卡片的代號名稱那一列收合／展開，標題列有「全部展開」「全部收合」；收起來的代號記在 [AppContainer.goodinfoCollapsed]，
  * 下次打開 App 一樣。收起來時抓到的結果還在（[FetchJobs] 裡），展開就看得到；收著的那檔正在抓時，代號旁邊轉圈。
  * 空清單時提示到「自選股」分頁加。
@@ -72,6 +74,9 @@ fun GoodinfoScreen(onSettings: () -> Unit, onOpen: (url: String) -> Unit) {
             title = { Text("goodinfo 快速連結", maxLines = 1, overflow = TextOverflow.Ellipsis) },
             actions = {
                 if (codes.isNotEmpty()) {
+                    IconButton(onClick = { jobs.fetchAll() }, enabled = !jobs.busy, modifier = Modifier.testTag("fetch_all")) {
+                        Icon(painterResource(R.drawable.ic_download), contentDescription = "全部抓取")
+                    }
                     IconButton(onClick = { setCollapsed(emptySet()) }, enabled = codes.any { it in collapsed }, modifier = Modifier.testTag("expand_all")) {
                         Icon(painterResource(R.drawable.ic_unfold_more), contentDescription = "全部展開")
                     }
@@ -86,6 +91,14 @@ fun GoodinfoScreen(onSettings: () -> Unit, onOpen: (url: String) -> Unit) {
         if (list.isEmpty()) {
             Text("還沒有自選股。到「自選股」分頁加幾檔，這裡就會列出來。", Modifier.padding(16.dp), style = MaterialTheme.typography.bodyMedium)
             return@Column
+        }
+        when (val all = jobs.all) {
+            is JobState.Running -> Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                JobProgress(all.copy(message = "全部抓取 ${all.message}"), Modifier.weight(1f).testTag("fetch_all_progress"))
+                TextButton(onClick = { jobs.cancel() }, modifier = Modifier.testTag("fetch_all_cancel")) { Text("取消") }
+            }
+            is JobState.Failed -> ErrorBox("全部抓取：${all.message}", Modifier.padding(horizontal = 12.dp))
+            else -> Unit
         }
         LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(12.dp)) {
             items(list, key = { it.code }) { stock ->

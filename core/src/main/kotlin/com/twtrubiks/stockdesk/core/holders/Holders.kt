@@ -41,7 +41,8 @@ class HoldersExpiredException(message: String) : HoldersException(message)
 sealed interface HoldersEvent {
     data class Progress(val done: Int, val total: Int, val date: LocalDate, val cached: Boolean) : HoldersEvent
     data class Done(val weeks: List<HolderWeek>) : HoldersEvent
-    data class Failed(val message: String, val partial: List<HolderWeek>) : HoldersEvent
+    /** [stop]：集保沒回應（可能被限流），不是這一檔的問題；「全部抓取」看到就不再打集保。 */
+    data class Failed(val message: String, val partial: List<HolderWeek>, val stop: Boolean = false) : HoldersEvent
 }
 
 /**
@@ -98,7 +99,7 @@ class HoldersSource(
             emit(HoldersEvent.Failed(e.message ?: "抓取失敗", out))
         } catch (e: IOException) {
             token = null
-            emit(HoldersEvent.Failed("集保沒回應，可能被限流，過一陣子再試", out))
+            emit(HoldersEvent.Failed("集保沒回應，可能被限流，過一陣子再試", out, stop = true))
         }
     }
 

@@ -49,7 +49,8 @@ class MarginException(message: String) : Exception(message)
 sealed interface MarginEvent {
     data class Progress(val done: Int, val total: Int, val date: LocalDate, val cached: Boolean) : MarginEvent
     data class Done(val market: Market, val rows: List<MarginDay>) : MarginEvent
-    data class Failed(val message: String, val partial: List<MarginDay>) : MarginEvent
+    /** [stop]：來源沒回應（可能被限流），不是這一檔的問題；「全部抓取」看到就不再打這個來源。 */
+    data class Failed(val message: String, val partial: List<MarginDay>, val stop: Boolean = false) : MarginEvent
 }
 
 /**
@@ -110,7 +111,7 @@ class MarginSource(
         } catch (e: MarginException) {
             emit(MarginEvent.Failed(e.message ?: "抓取失敗", rows))
         } catch (e: IOException) {
-            emit(MarginEvent.Failed("沒回應，可能被限流，過一陣子再試（${e.message ?: e.javaClass.simpleName}）", rows))
+            emit(MarginEvent.Failed("沒回應，可能被限流，過一陣子再試（${e.message ?: e.javaClass.simpleName}）", rows, stop = true))
         }
     }
 

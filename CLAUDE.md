@@ -56,7 +56,7 @@ core（純 Kotlin，沒有 Android）
 - 資料來源都透過 `Http` 介面發請求，base URL 都能換：JVM 測試用 `FakeHttp`，模擬器用 `FakeSources`（MockWebServer，
   `StockDeskApplication.useEndpointsForTest` 要在第一次用到 `container` 之前呼叫）。`today`、`now`、`Pacer` 都能注入，測試不看真的時鐘
 - **節流是硬規則**：每個主機一個 `Pacer`（證交所 2 秒、櫃買 1 秒、集保 1 秒、Yahoo／blave／HiStock 各 2 秒，另加 0～25% 隨機），讀快取不算；
-  一次只跑一個對外的抓取（`FetchJobs.busy`），不要平行。逾時抓短（連線 5 秒、讀取 8 秒），沒回應就停、提示可能被限流
+  一次只跑一個對外的抓取（`FetchJobs.busy`），不要平行。goodinfo 的「全部抓取」（`FetchJobs.fetchAll`）也是照順序一檔一檔，檔與檔之間另加隨機的停頓。逾時抓短（連線 5 秒、讀取 8 秒），沒回應就停、提示可能被限流
 - 「今天沒資料」可能只是還沒公布，不記成休市，只在記憶體記 10 分鐘
 - **Android 9 的 SQLite 是 3.22**：不要用 UPSERT、window function、`RETURNING`。改 schema 用 `ALTER TABLE ADD COLUMN` 或在 store 的 init 判斷，手機上的自選股不能丟
 - **Android 的 regex 是 ICU**：`{`、`}` 一定要跳脫（JVM 接受沒跳脫的 `}`；寫在 companion 裡整個 class 載入就失敗）
