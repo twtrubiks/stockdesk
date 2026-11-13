@@ -9,7 +9,7 @@ plugins {
 
 android {
     namespace = "com.twtrubiks.stockdesk"
-    // AndroidX（core 1.19、Compose 1.12、lifecycle 2.11）要求 compileSdk 37；GeckoView 159 要求 37.2（Android 17 的 minor SDK）。
+    // AndroidX（core 1.19、Compose 1.12、lifecycle 2.11）要求 compileSdk 37；GeckoView 160 要求 37.2（Android 17 的 minor SDK）。
     // targetSdk 維持 36（執行時的行為不變）
     compileSdk {
         version = release(37) { minorApiLevel = 2 }

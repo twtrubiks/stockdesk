@@ -13,7 +13,7 @@ jsoup = "1.23.2"
 # 證交所／櫃買回的 JSON、自選股匯出匯入、快取裡的 JSON blob
 kotlinxSerializationJson = "1.12.0"
 # 內建瀏覽器的引擎（＋ uBlock Origin）。約每 4 週一版、帶安全修補，要跟著升（maven.mozilla.org 的 maven-metadata.xml 看最新版）
-geckoview = "159.0.20261102144711"
+geckoview = "160.0.20261104181552"
 junit = "4.13.2"
 # JVM 單元測試用真的 SQLite 跑 store 的 SQL（手機上是 Android 內建的 SQLite）
 sqliteJdbc = "3.53.4.0"
