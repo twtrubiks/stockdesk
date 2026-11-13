@@ -1,0 +1,8 @@
+
+com.twtrubiks.stockdesk.DeviceTest:.....
+
+Time: 0.134
+
+OK (5 tests)
+
+

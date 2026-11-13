@@ -1,0 +1,8 @@
+
+com.twtrubiks.stockdesk.DemoRecordingTest:.
+
+Time: 59.184
+
+OK (1 test)
+
+

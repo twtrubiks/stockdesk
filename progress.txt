@@ -1,0 +1,5 @@
+01:39:56 安裝 debug 版與測試 APK
+01:40:01 DeviceTest
+01:40:02 DemoRecordingTest（錄影）
+01:41:07 收回錄影
+01:41:07 release 冒煙測試
