@@ -114,6 +114,11 @@ class CacheStore(private val sql: Sql) {
         sql.query("SELECT json FROM holders_weeks WHERE code = ? AND date = ?", code, date.toString())
             .firstOrNull()?.let { json.decodeFromString<HolderWeek>(it.string("json")) }
 
+    /** 快取裡這一檔最新的一週（goodinfo 卡片收著持股分級時那一行的摘要）；沒抓過是 null。 */
+    fun latestHoldersWeek(code: String): HolderWeek? =
+        sql.query("SELECT json FROM holders_weeks WHERE code = ? ORDER BY date DESC LIMIT 1", code)
+            .firstOrNull()?.let { json.decodeFromString<HolderWeek>(it.string("json")) }
+
     fun putHoldersWeek(code: String, week: HolderWeek) {
         sql.execute("INSERT OR REPLACE INTO holders_weeks (code, date, json) VALUES (?, ?, ?)", code, week.date, json.encodeToString(week))
     }

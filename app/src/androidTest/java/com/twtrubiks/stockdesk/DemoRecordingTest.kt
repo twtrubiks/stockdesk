@@ -68,6 +68,8 @@ class DemoRecordingTest : UiTest() {
         screenshot("04-margin")
 
         // 股東持股分級：假的集保（token 綁 session cookie，沒帶 cookie 就回空表），查詢頁 ＋ 近 2 週
+        // 持股分級預設收著：點那一行展開（所有卡片一起），「全部抓取」才會連持股分級一起抓
+        find(res("holders_toggle_2330")).click()
         find(res("fetch_holders_2330").enabled(true)).click()
         // 等週表的表頭：融資融券・官股的表格比較高，底下的「各級持股比例」在畫面外，UiAutomator 找不到
         waitFor(By.text("股東人數"), timeout = 30_000)

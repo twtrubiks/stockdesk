@@ -158,8 +158,9 @@ class FetchJobs(private val c: AppContainer) {
      * 每個主機自己的 [com.twtrubiks.stockdesk.core.http.Pacer] 照樣管請求之間的間隔；這裡另外在「上一步有連網」時
      * 多停一段隨機的時間（同一檔的兩步之間 [STEP_PAUSE_MS]、換下一檔 [STOCK_PAUSE_MS]），每次長短都不一樣；
      * 上一步全部讀快取就不停。某個來源沒回應（可能被限流）就不再打它，其他來源繼續；三個都停了就結束。
+     * [withHolders] 是 false（卡片上的持股分級收著）就只抓融資融券＋八大官股，不打集保；進度會寫「不含持股分級」。
      */
-    fun fetchAll() {
+    fun fetchAll(withHolders: Boolean = c.goodinfoHolders.value) {
         if (busy) return
         busy = true
         all = JobState.Running("開始抓…")
@@ -172,11 +173,12 @@ class FetchJobs(private val c: AppContainer) {
                 var marginStop: String? = null
                 var govStop: String? = null
                 var holdersStop: String? = null
+                val skipped = if (withHolders) "" else "（不含持股分級）"
                 var pause = false // 上一步有連網，下一步之前先停一下
                 for ((i, stock) in stocks.withIndex()) {
-                    if (marginStop != null && govStop != null && holdersStop != null) break
+                    if (marginStop != null && govStop != null && (holdersStop != null || !withHolders)) break
                     code = stock.code
-                    val label = "${i + 1}/$total ${stock.code} ${stock.name.orEmpty()}".trim()
+                    val label = "$skipped${i + 1}/$total ${stock.code} ${stock.name.orEmpty()}".trim()
                     suspend fun step(name: String, range: LongRange, fetch: suspend () -> Step): Step {
                         if (pause) {
                             val ms = Random.nextLong(range.first, range.last + 1)
@@ -197,7 +199,7 @@ class FetchJobs(private val c: AppContainer) {
                         marginStop = marginStop ?: r.stop
                         govStop = govStop ?: r.govStop
                     }
-                    if (holdersStop == null) {
+                    if (withHolders && holdersStop == null) {
                         holders[stock.code] = JobState.Running("開始抓…")
                         // 這一檔的第一步沒跑（來源都停了）時，上一步是前一檔，照換檔的間隔停
                         holdersStop = step("股東持股分級", if (chips) STEP_PAUSE_MS else STOCK_PAUSE_MS) { collectHolders(stock.code) }.stop

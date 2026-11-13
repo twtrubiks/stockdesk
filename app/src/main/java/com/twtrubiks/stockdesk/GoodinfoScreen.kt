@@ -42,6 +42,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import com.twtrubiks.stockdesk.core.holders.HolderWeek
 import com.twtrubiks.stockdesk.core.links.Links
 import com.twtrubiks.stockdesk.core.model.StockRef
 import kotlinx.coroutines.Dispatchers
@@ -55,6 +56,8 @@ import kotlinx.coroutines.withContext
  * 標題列的「全部抓取」照順序把每一檔的兩種資料都抓一遍（[FetchJobs.fetchAll]），進度與「取消」在標題列底下。
  * 點卡片的代號名稱那一列收合／展開，標題列有「全部展開」「全部收合」；收起來的代號記在 [AppContainer.goodinfoCollapsed]，
  * 下次打開 App 一樣。收起來時抓到的結果還在（[FetchJobs] 裡），展開就看得到；收著的那檔正在抓時，代號旁邊轉圈。
+ * 「股東持股分級」那一區預設收著（一週才更新一次）：只剩一行標題＋快取裡最新一週的日期與大戶比例，點那一行所有卡片一起展開／收回
+ * （[AppContainer.goodinfoHolders]，記到下次打開 App）；收著時「全部抓取」不抓持股分級。
  * 空清單時提示到「自選股」分頁加。
  */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -66,6 +69,7 @@ fun GoodinfoScreen(onSettings: () -> Unit, onOpen: (url: String) -> Unit) {
     val stocks by produceState<List<StockRef>?>(null, c.watchlist) { value = withContext(Dispatchers.IO) { c.watchlist.all() } }
     val codes = stocks.orEmpty().map { it.code }
     val collapsed = c.goodinfoCollapsed.value
+    val showHolders = c.goodinfoHolders.value
 
     // 已經不在自選股裡的代號順手清掉，不然刪掉再加回來還會是收著的
     fun setCollapsed(next: Set<String>) = c.goodinfoCollapsed.set(next.intersect(codes.toSet()))
@@ -134,18 +138,24 @@ fun GoodinfoScreen(onSettings: () -> Unit, onOpen: (url: String) -> Unit) {
                                 JobState.Idle -> Unit
                             }
                             HorizontalDivider(Modifier.padding(top = 12.dp), color = MaterialTheme.colorScheme.outlineVariant)
-                            ToolRow(
-                                label = "股東持股分級",
-                                tag = "fetch_holders_${stock.code}",
-                                busy = jobs.busy,
-                                onOpen = { onOpen(Links.goodinfoHolders(stock.code)) },
-                                onFetch = { jobs.fetchHolders(stock.code) },
-                            )
-                            when (holders) {
-                                is JobState.Running -> JobProgress(holders)
-                                is JobState.Failed -> ErrorBox(holders.message)
-                                is JobState.Ready -> HoldersTable(holders.value)
-                                JobState.Idle -> Unit
+                            if (showHolders) {
+                                ToolRow(
+                                    label = "股東持股分級",
+                                    tag = "fetch_holders_${stock.code}",
+                                    busy = jobs.busy,
+                                    onOpen = { onOpen(Links.goodinfoHolders(stock.code)) },
+                                    onFetch = { jobs.fetchHolders(stock.code) },
+                                    collapseTag = "holders_toggle_${stock.code}",
+                                    onCollapse = { c.goodinfoHolders.set(false) },
+                                )
+                                when (holders) {
+                                    is JobState.Running -> JobProgress(holders)
+                                    is JobState.Failed -> ErrorBox(holders.message)
+                                    is JobState.Ready -> HoldersTable(holders.value)
+                                    JobState.Idle -> Unit
+                                }
+                            } else {
+                                HoldersCollapsedRow(stock.code, holders, Modifier.testTag("holders_toggle_${stock.code}")) { c.goodinfoHolders.set(true) }
                             }
                         }
                     }
@@ -190,11 +200,62 @@ private fun StockHeader(stock: StockRef, expanded: Boolean, running: Boolean, on
     }
 }
 
-/** 一個區塊的標題列：名稱、「goodinfo」（內建瀏覽器開 goodinfo 對應頁）、「抓」（向官方來源抓）。 */
+/**
+ * 持股分級收著時的那一行：標題＋最新一週的日期與大戶（>1000 張）比例＋往下的箭頭，點了展開（所有卡片一起）。
+ * 摘要先看這次抓到的，沒有就讀快取（在 IO）；都沒有就只有標題。
+ */
 @Composable
-private fun ToolRow(label: String, tag: String, busy: Boolean, onOpen: () -> Unit, onFetch: () -> Unit) {
+private fun HoldersCollapsedRow(code: String, state: JobState<List<HolderWeek>>, modifier: Modifier, onExpand: () -> Unit) {
+    val fetched = (state as? JobState.Ready)?.value?.firstOrNull()
+    val c = LocalContext.current.container
+    val latest by produceState(fetched, code, fetched) { value = fetched ?: withContext(Dispatchers.IO) { runCatching { c.cache.latestHoldersWeek(code) }.getOrNull() } }
+    Row(
+        modifier.fillMaxWidth().padding(top = 6.dp).clickable(onClickLabel = "展開股東持股分級", onClick = onExpand).heightIn(min = 40.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text("股東持股分級", style = MaterialTheme.typography.titleSmall)
+        Text(
+            latest?.let { "${shortDate(it.date)}・大戶 ${fmtPct(it.bigPct)}" }.orEmpty(),
+            Modifier.weight(1f).padding(horizontal = 10.dp),
+            style = numStyle(MaterialTheme.typography.labelMedium),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+        if (state is JobState.Running) {
+            CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
+            Spacer(Modifier.width(8.dp))
+        }
+        Icon(painterResource(R.drawable.ic_arrow_down), contentDescription = null, Modifier.padding(end = 6.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+/**
+ * 一個區塊的標題列：名稱、「goodinfo」（內建瀏覽器開 goodinfo 對應頁）、「抓」（向官方來源抓）。
+ * 給了 [onCollapse] 的區塊可以收起來：名稱旁邊多一個往上的箭頭，點名稱那一塊就收。
+ */
+@Composable
+private fun ToolRow(
+    label: String,
+    tag: String,
+    busy: Boolean,
+    onOpen: () -> Unit,
+    onFetch: () -> Unit,
+    collapseTag: String = "",
+    onCollapse: (() -> Unit)? = null,
+) {
     Row(Modifier.fillMaxWidth().padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-        Text(label, Modifier.weight(1f), style = MaterialTheme.typography.titleSmall)
+        if (onCollapse == null) {
+            Text(label, Modifier.weight(1f), style = MaterialTheme.typography.titleSmall)
+        } else {
+            Row(
+                Modifier.weight(1f).clickable(onClickLabel = "收起$label", onClick = onCollapse).heightIn(min = 36.dp).testTag(collapseTag),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(label, style = MaterialTheme.typography.titleSmall)
+                Icon(painterResource(R.drawable.ic_arrow_up), contentDescription = null, Modifier.padding(start = 4.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
         OutlinedButton(onClick = onOpen, contentPadding = PaddingValues(horizontal = 12.dp), modifier = Modifier.height(36.dp)) {
             Text("goodinfo", style = MaterialTheme.typography.labelLarge)
             Spacer(Modifier.width(4.dp))

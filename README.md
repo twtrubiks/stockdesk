@@ -7,11 +7,11 @@
 
 | goodinfo（抓官方資料） | goodinfo（收合） | 社群 | 自選股 |
 |:-:|:-:|:-:|:-:|
-| <img src="docs/screenshots/goodinfo.png" width="200" alt="goodinfo 分頁：台積電的融資融券與股東持股分級"> | <img src="docs/screenshots/goodinfo-collapsed.png" width="200" alt="goodinfo 分頁：卡片收合"> | <img src="docs/screenshots/forum.png" width="200" alt="社群分頁：個股討論區"> | <img src="docs/screenshots/watchlist.png" width="200" alt="自選股分頁"> |
+| <img src="docs/screenshots/goodinfo.png" width="200" alt="goodinfo 分頁：台積電的融資融券・官股與股東持股分級"> | <img src="docs/screenshots/goodinfo-collapsed.png" width="200" alt="goodinfo 分頁：卡片收合"> | <img src="docs/screenshots/forum.png" width="200" alt="社群分頁：個股討論區"> | <img src="docs/screenshots/watchlist.png" width="200" alt="自選股分頁：每一檔底下是官股最新一天的買賣超"> |
 
 | 大盤：國際指數 | 大盤：權重 | 大盤：官股 | 設定 |
 |:-:|:-:|:-:|:-:|
-| <img src="docs/screenshots/indices.png" width="200" alt="大盤分頁：國際指數走勢"> | <img src="docs/screenshots/weights.png" width="200" alt="大盤分頁：加權指數權重"> | <img src="docs/screenshots/public-bank.png" width="200" alt="大盤分頁：八大官股"> | <img src="docs/screenshots/settings.png" width="200" alt="設定"> |
+| <img src="docs/screenshots/indices.png" width="200" alt="大盤分頁：國際指數走勢"> | <img src="docs/screenshots/weights.png" width="200" alt="大盤分頁：加權指數權重"> | <img src="docs/screenshots/public-bank.png" width="200" alt="大盤分頁：八大官股全市場"> | <img src="docs/screenshots/settings.png" width="200" alt="設定"> |
 
 截圖來自 CI 的 Android 9 模擬器（[`record.yml`](.github/workflows/record.yml)），資料來源換成假的，畫面上的數字是測試用的假資料。
 更新截圖：CI 跑完後執行 `scripts/readme-screenshots.sh`。
@@ -20,6 +20,7 @@
 
 - **goodinfo**：自選股每一檔一鍵在 App 內建的瀏覽器頁開 goodinfo 的融資融券／股權分散頁；「抓」直接向證交所、櫃買、集保抓同一份資料的官方來源，不經 goodinfo；融資融券那一列同時抓八大官股在這一檔的買賣超（blave，上櫃股用 HiStock，非官方），併成一張表。
   標題列的「全部抓取」照順序把每一檔都抓一遍，檔與檔之間隨機停頓。
+  股東持股分級一週才更新一次，預設收著（只剩一行摘要），點一下展開；收著時「全部抓取」不抓它。
   點代號名稱收合／展開，標題列可以一鍵全部展開、全部收合
 - **社群**：自選股每一檔一鍵開個股討論區網頁（內建瀏覽器頁），不用登入、不用 token
 - **大盤**：三頁切換

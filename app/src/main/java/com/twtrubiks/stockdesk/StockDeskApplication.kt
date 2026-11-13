@@ -65,6 +65,9 @@ class AppContainer(private val context: Context, val endpoints: Endpoints = Endp
     /** 融資融券的表格要不要多顯示資使用率、券資比兩欄（預設不顯示）。 */
     val marginRatios = BoolSetting(settings, "margin_ratios", false)
 
+    /** goodinfo 卡片的「股東持股分級」那一區要不要展開（所有卡片一起）。預設收著：一週才更新一次，「全部抓取」也跟著跳過它。 */
+    val goodinfoHolders = BoolSetting(settings, "goodinfo_holders", false)
+
     /** goodinfo 分頁收起來的卡片（代號）。記住到下次打開 App；新加的自選股不在裡面，所以是展開的。 */
     val goodinfoCollapsed = StringSetSetting(settings, "goodinfo_collapsed")
 
