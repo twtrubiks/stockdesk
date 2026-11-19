@@ -73,7 +73,7 @@ data class Indices(
  * - **不是官方來源，也沒有公開文件**：不用金鑰，但哪天改格式、限流（HTTP 429）或要 cookie 都有可能；壞了就顯示錯誤，
  *   畫面上有「在瀏覽器開 Yahoo 國際指數」當備案。美、日、韓、港的指數沒有免費的官方分時資料
  * - 一發拿全部指數（`symbols=^TWII,^DJI,…&range=1d&interval=5m`，約 21 KB）：每個指數「最近一個交易日」的 5 分鐘收盤價、
- *   昨收（`chartPreviousClose`，跟 Yahoo 網頁上的漲跌一樣）、這個交易日的盤（`tradingPeriods`）。
+ *   昨收（`fulldayPrice` − `fulldayChange`，跟 Yahoo 網頁上的漲跌一樣；`chartPreviousClose` 會慢一天，見 [prevClose]）、這個交易日的盤（`tradingPeriods`）。
  *   不用 `range=5d` 自己切：5 分鐘線最後一根不一定等於收盤價（韓國有收盤競價），算出來的漲跌會跟網頁對不上
  * - 一定要帶瀏覽器的 User-Agent：沒有 User-Agent 會回 429
  * - 沒有自動更新：進頁面時上次抓取超過 [FRESH_MS] 才抓，其他時候按重新整理（[load] 的 force）
@@ -175,7 +175,7 @@ class IndicesSource(
             if (points.isEmpty()) return null
 
             val zone = meta.str("exchangeTimezoneName") ?: return null
-            val prevClose = meta.num("chartPreviousClose") ?: meta.num("previousClose") ?: return null
+            val prevClose = prevClose(meta) ?: return null
             // 這一天的盤：tradingPeriods 第一段的開始到最後一段的結束；沒有就用 currentTradingPeriod.regular，再沒有就用頭尾兩點
             val periods = (meta["tradingPeriods"] as? JsonArray)?.flatMap { (it as? JsonArray).orEmpty() }?.mapNotNull { it as? JsonObject }.orEmpty()
             val regular = (meta["currentTradingPeriod"] as? JsonObject)?.get("regular") as? JsonObject
@@ -193,6 +193,18 @@ class IndicesSource(
                 times = points.map { it.first },
                 values = points.map { it.second },
             )
+        }
+
+        /**
+         * 昨收。先用 Yahoo 自己算漲跌的那一組（`fulldayPrice` − `fulldayChange`，網頁上的漲跌就是這個），沒有才用 `chartPreviousClose`：
+         * **`chartPreviousClose` 會慢一天**：台股收盤後它還是前兩個交易日的收盤，到隔天早上都沒變，照它算漲跌會錯
+         *（11/18 漲 102.8 點會算成跌 845 點）。日、韓、美股同一發回來的是對的。
+         */
+        private fun prevClose(meta: JsonObject): Double? {
+            val fullPrice = meta.num("fulldayPrice")
+            val fullChange = meta.num("fulldayChange")
+            if (fullPrice != null && fullChange != null) return fullPrice - fullChange
+            return meta.num("chartPreviousClose") ?: meta.num("previousClose")
         }
 
         private fun JsonObject.str(key: String): String? = this[key]?.takeIf { it !is JsonNull }?.let { runCatching { it.jsonPrimitive.content }.getOrNull() }

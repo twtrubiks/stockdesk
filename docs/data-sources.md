@@ -71,10 +71,11 @@
   result 的順序是 Yahoo 自己排的（不照 symbols），用 symbol 對
 - `range=1d` 回每個市場**自己的最近一個交易日**（假日抓到的全是上一個交易日）：5 分鐘一點（含頭尾，道瓊 09:30～16:00 共 79 點、台股 09:00～13:30 共 55 點）；
   close 可能是 null（那 5 分鐘沒成交），跳過
-- meta：`regularMarketPrice`（最新／收盤）、`chartPreviousClose`（昨收）、`regularMarketTime`、`exchangeTimezoneName`、
+- meta：`regularMarketPrice`（最新／收盤）、`fulldayPrice`／`fulldayChange`（Yahoo 自己算的漲跌）、`chartPreviousClose`、`regularMarketTime`、`exchangeTimezoneName`、
   `tradingPeriods`（`[[{start,end}]]`，那天的盤；日本、香港的午休沒有切開）、`currentTradingPeriod.regular`
-- 漲跌 ＝ `regularMarketPrice` − `chartPreviousClose`，跟網頁上的一樣。**不要用 `range=5d` 自己切**：
-  前一天的最後一根 5 分鐘線不一定等於收盤價（韓國有收盤競價），漲跌會對不上
+- 昨收 ＝ `fulldayPrice` − `fulldayChange`（沒有這兩欄才用 `chartPreviousClose`），漲跌 ＝ `regularMarketPrice` − 昨收，跟網頁上的一樣。
+  **`chartPreviousClose` 會慢一天**：台股收盤後它還是前兩個交易日的收盤，到隔天早上都沒變，照它算漲跌會錯；日、韓、美股同一發是對的。
+  **不要用 `range=5d` 自己切**：前一天的最後一根 5 分鐘線不一定等於收盤價（韓國有收盤競價），漲跌會對不上
 - 沒有 User-Agent 回 HTTP 429；瀏覽器的 User-Agent 正常
 - 某個指數沒有點（例如開盤前）就沿用快取裡它上次那一天
 - 節流：`Pacer` 2 秒（一次重新整理只打一發，這是連按的下限）。進頁面時上次抓取在 5 分鐘內就讀快取，沒有自動更新

@@ -27,7 +27,8 @@ class IndicesParseTest {
     fun dowMatchesTheYahooPage() {
         val dji = days.getValue("^DJI")
         assertEquals(51_285.73, dji.price, 0.001)
-        assertEquals(51_523.06, dji.prevClose, 0.001)
+        // 昨收是 fulldayPrice − fulldayChange（fulldayChange 只有三位小數，差在第三位）
+        assertEquals(51_523.06, dji.prevClose, 0.005)
         // 網頁上是「▼237.33（0.46%）」
         assertEquals(-237.33, dji.change, 0.005)
         assertEquals(-0.46, dji.changePct, 0.005)
@@ -49,14 +50,14 @@ class IndicesParseTest {
         assertEquals(-5.96, n225.changePct, 0.005)
         assertEquals(LocalDate.of(2026, 11, 6), n225.sessionDate)
 
-        // 韓國：昨收用 chartPreviousClose（5 分鐘線最後一根不是收盤價）
+        // 韓國：昨收是 Yahoo 給的，不是自己拿前一天最後一根 5 分鐘線（那不是收盤價）
         val kospi = days.getValue("^KS11")
-        assertEquals(5_383.8, kospi.prevClose, 0.001)
+        assertEquals(5_383.8, kospi.prevClose, 0.005)
         assertEquals(5_059.69, kospi.price, 0.001)
 
         val twii = days.getValue("^TWII")
         assertEquals(39_701.64, twii.price, 0.001)
-        assertEquals(41_574.72, twii.prevClose, 0.001)
+        assertEquals(41_574.72, twii.prevClose, 0.005)
         // 09:00～13:30 共 4.5 小時
         assertEquals(4 * 3600 + 1800L, twii.sessionEnd - twii.sessionStart)
 
@@ -64,6 +65,32 @@ class IndicesParseTest {
         assertEquals(24_481.86, hsi.price, 0.001)
         assertEquals(-1.27, hsi.changePct, 0.005)
     }
+
+    /**
+     * 台股 11/18 收 40194.91、漲 102.80（0.26%），但 `chartPreviousClose` 還是 11/16 的收盤 41040.1
+     *（11/17 收 40092.11）。照 `chartPreviousClose` 算會變成跌 845 點。
+     */
+    @Test
+    fun staleChartPreviousCloseIsIgnoredWhenYahooGivesItsOwnChange() {
+        val twii = IndicesSource.parse(sparkOne(""""fulldayPrice":40194.91,"fulldayChange":102.801,"fulldayChangePercent":0.256,""")).single()
+        assertEquals(40_194.91, twii.price, 0.001)
+        assertEquals(40_092.11, twii.prevClose, 0.005)
+        assertEquals(102.80, twii.change, 0.005)
+        assertEquals(0.26, twii.changePct, 0.005)
+    }
+
+    @Test
+    fun withoutFulldayFieldsFallsBackToChartPreviousClose() {
+        val twii = IndicesSource.parse(sparkOne("")).single()
+        assertEquals(41_040.1, twii.prevClose, 0.001)
+    }
+
+    /** 只有台股一個指數、三個點的回應；[fullday] 是 meta 裡 Yahoo 自己算漲跌的那幾欄（可以不給）。 */
+    private fun sparkOne(fullday: String): String =
+        """{"spark":{"result":[{"symbol":"^TWII","response":[{"meta":{"symbol":"^TWII","exchangeTimezoneName":"Asia/Taipei",""" +
+            """"regularMarketTime":1794980005,"regularMarketPrice":40194.91,$fullday"chartPreviousClose":41040.1,"previousClose":41040.1,""" +
+            """"tradingPeriods":[[{"start":1794963600,"end":1794979800}]]},"timestamp":[1794963600,1794979500,1794979800],""" +
+            """"indicators":{"quote":[{"close":[40449.57,40139.24,40194.91]}]}}]}],"error":null}}"""
 
     @Test
     fun notJsonOrWrongShapeFails() {
