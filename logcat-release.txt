@@ -1,0 +1,350 @@
+--------- beginning of main
+11-20 23:42:19.718  1839  1913 I chatty  : uid=1000(system) InputReader expire 1 line
+11-20 23:42:19.719  1839  1913 I InputReader: Reconfiguring input devices.  changes=0x00000010
+11-20 23:42:19.735  2068  2068 D CarrierSvcBindHelper: No carrier app for: 0
+11-20 23:42:19.738  2068  2068 D CarrierSvcBindHelper: No carrier app for: 0
+11-20 23:42:19.743  2068  2068 D CarrierConfigLoader: mHandler: 9 phoneId: 0
+--------- beginning of system
+11-20 23:42:19.750  1839  1853 D AutofillManagerServiceImpl: Reset component for user 0 ()
+11-20 23:42:19.751  1839  1853 D AutofillManagerServiceImpl: Reset component for user 0 ()
+11-20 23:42:19.751  1839  1853 D FieldClassificationStrategy: reset(): service is not bound. Do nothing.
+11-20 23:42:19.751  1839  1855 D AutofillUI: destroySaveUiUiThread(): already destroyed
+11-20 23:42:19.751  1839  1853 W VoiceInteractionManagerService: no available voice recognition services found for user 0
+11-20 23:42:19.757  1839  3800 I ActivityManager: START u0 {flg=0x10000000 cmp=com.twtrubiks.stockdesk/.MainActivity} from uid 2000
+11-20 23:42:19.788  1839  1856 I ActivityManager: Start proc 3818:com.twtrubiks.stockdesk/u0a67 for activity com.twtrubiks.stockdesk/.MainActivity
+11-20 23:42:19.794  3818  3818 W ubiks.stockdes: Unexpected CPU variant for X86 using defaults: x86_64
+11-20 23:42:19.833  1562  1562 D gralloc_ranchu: gralloc_alloc: Creating ashmem region of size 17973248
+11-20 23:42:19.878  3818  3818 D OpenGLRenderer: Skia GL Pipeline
+11-20 23:42:19.880  1684  1866 E SurfaceFlinger: ro.sf.lcd_density must be defined as a build property
+11-20 23:42:20.001  1562  1562 D gralloc_ranchu: gralloc_alloc: Creating ashmem region of size 17973248
+11-20 23:42:20.141  3818  3818 W ubiks.stockdes: Accessing hidden method Landroid/view/RenderNode;->getScaleX()F (dark greylist, linking)
+11-20 23:42:20.141  3818  3818 W ubiks.stockdes: Accessing hidden method Landroid/view/RenderNode;->setScaleY(F)Z (dark greylist, linking)
+11-20 23:42:20.141  3818  3818 W ubiks.stockdes: Accessing hidden method Landroid/view/RenderNode;->getMatrix(Landroid/graphics/Matrix;)V (dark greylist, linking)
+11-20 23:42:20.141  3818  3818 W ubiks.stockdes: Accessing hidden method Landroid/view/RenderNode;->setPivotX(F)Z (dark greylist, linking)
+11-20 23:42:20.145  3818  3818 W ubiks.stockdes: Accessing hidden method Landroid/view/RenderNode;->setLayerPaint(Landroid/graphics/Paint;)Z (dark greylist, linking)
+11-20 23:42:20.145  3818  3818 W ubiks.stockdes: Accessing hidden method Landroid/view/RenderNode;->setCameraDistance(F)Z (dark greylist, linking)
+11-20 23:42:20.145  3818  3818 W ubiks.stockdes: Accessing hidden method Landroid/view/RenderNode;->setRotationX(F)Z (dark greylist, linking)
+11-20 23:42:20.145  3818  3818 W ubiks.stockdes: Accessing hidden method Landroid/view/RenderNode;->setClipToOutline(Z)Z (dark greylist, linking)
+11-20 23:42:20.145  3818  3818 W ubiks.stockdes: Accessing hidden method Landroid/view/RenderNode;->setClipToOutline(Z)Z (dark greylist, linking)
+11-20 23:42:20.145  3818  3818 W ubiks.stockdes: Accessing hidden method Landroid/view/RenderNode;->setLayerType(I)Z (dark greylist, linking)
+11-20 23:42:20.145  3818  3818 I chatty  : uid=10067(com.twtrubiks.stockdesk) AndroidUI identical 1 line
+11-20 23:42:20.145  3818  3818 W ubiks.stockdes: Accessing hidden method Landroid/view/RenderNode;->setLayerType(I)Z (dark greylist, linking)
+11-20 23:42:20.145  3818  3818 W ubiks.stockdes: Accessing hidden method Landroid/view/RenderNode;->setPivotX(F)Z (dark greylist, linking)
+11-20 23:42:20.145  3818  3818 W ubiks.stockdes: Accessing hidden method Landroid/view/RenderNode;->setPivotX(F)Z (dark greylist, linking)
+11-20 23:42:20.145  3818  3818 W ubiks.stockdes: Accessing hidden method Landroid/view/RenderNode;->setRotationY(F)Z (dark greylist, linking)
+11-20 23:42:20.145  3818  3818 W ubiks.stockdes: Accessing hidden method Landroid/view/RenderNode;->setAlpha(F)Z (dark greylist, linking)
+11-20 23:42:20.145  3818  3818 W ubiks.stockdes: Accessing hidden method Landroid/view/RenderNode;->setElevation(F)Z (dark greylist, linking)
+11-20 23:42:20.145  3818  3818 W ubiks.stockdes: Accessing hidden method Landroid/view/RenderNode;->setRotation(F)Z (dark greylist, linking)
+11-20 23:42:20.145  3818  3818 W ubiks.stockdes: Accessing hidden method Landroid/view/RenderNode;->setTranslationY(F)Z (dark greylist, linking)
+11-20 23:42:20.145  3818  3818 W ubiks.stockdes: Accessing hidden method Landroid/view/RenderNode;->setOutline(Landroid/graphics/Outline;)Z (dark greylist, linking)
+11-20 23:42:20.145  3818  3818 W ubiks.stockdes: Accessing hidden method Landroid/view/RenderNode;->setScaleX(F)Z (dark greylist, linking)
+11-20 23:42:20.145  3818  3818 W ubiks.stockdes: Accessing hidden method Landroid/view/RenderNode;->setTranslationX(F)Z (dark greylist, linking)
+11-20 23:42:20.145  3818  3818 W ubiks.stockdes: Accessing hidden method Landroid/view/RenderNode;->getScaleX()F (dark greylist, linking)
+11-20 23:42:20.211  1562  1562 D gralloc_ranchu: gralloc_alloc: Creating ashmem region of size 17973248
+11-20 23:42:20.211  3818  3835 D         : HostConnection::get() New Host Connection established 0x717d3a547b00, tid 3835
+11-20 23:42:20.264  1562  1562 D gralloc_ranchu: gralloc_alloc: Creating ashmem region of size 17973248
+11-20 23:42:20.273  1562  1562 D gralloc_ranchu: gralloc_alloc: Creating ashmem region of size 17973248
+11-20 23:42:20.336  3818  3835 I ConfigStore: android::hardware::configstore::V1_0::ISurfaceFlingerConfigs::hasWideColorDisplay retrieved: 0
+11-20 23:42:20.336  3818  3835 I ConfigStore: android::hardware::configstore::V1_0::ISurfaceFlingerConfigs::hasHDRDisplay retrieved: 0
+11-20 23:42:20.336  3818  3835 I OpenGLRenderer: Initialized EGL, version 1.4
+11-20 23:42:20.336  3818  3835 D OpenGLRenderer: Swap behavior 1
+11-20 23:42:20.393  3818  3835 D EGL_emulation: eglCreateContext: 0x717d3a5e8380: maj 3 min 0 rcv 3
+11-20 23:42:20.393  2498  2642 D EGL_emulation: eglMakeCurrent: 0x717d25301e00: ver 3 0 (tinfo 0x717d2527c9a0)
+11-20 23:42:20.397  3818  3835 D EGL_emulation: eglMakeCurrent: 0x717d3a5e8380: ver 3 0 (tinfo 0x717d325f4c00)
+11-20 23:42:20.398  1978  2213 D EGL_emulation: eglMakeCurrent: 0x717d22c3f000: ver 3 0 (tinfo 0x717d30b37000)
+11-20 23:42:20.401  1684  2329 E SurfaceFlinger: ro.sf.lcd_density must be defined as a build property
+11-20 23:42:20.427  1978  2213 D EGL_emulation: eglMakeCurrent: 0x717d22c3f000: ver 3 0 (tinfo 0x717d30b37000)
+11-20 23:42:20.532  1839  1898 I GnssLocationProvider: WakeLock acquired by sendMessage(REPORT_SV_STATUS, 0, com.android.server.location.GnssLocationProvider$SvStatusInfo@42cf42b)
+11-20 23:42:20.532  1839  1853 I GnssLocationProvider: WakeLock released by handleMessage(REPORT_SV_STATUS, 0, com.android.server.location.GnssLocationProvider$SvStatusInfo@42cf42b)
+11-20 23:42:20.604  3818  3818 I Choreographer: Skipped 40 frames!  The application may be doing too much work on its main thread.
+11-20 23:42:20.678  3818  3835 D EGL_emulation: eglMakeCurrent: 0x717d3a5e8380: ver 3 0 (tinfo 0x717d325f4c00)
+11-20 23:42:21.375  3818  3835 I OpenGLRenderer: Davey! duration=1369ms; Flags=1, IntendedVsync=97863577611, Vsync=98530244251, OldestInputEvent=9223372036854775807, NewestInputEvent=0, HandleInputStart=98534432712, AnimationStart=98534445563, PerformTraversalsStart=98551125935, DrawStart=98558620277, SyncQueued=98570439196, SyncStart=98643755543, IssueDrawCommandsStart=98643819067, SwapBuffers=99167006755, FrameCompleted=99306206684, DequeueBufferDuration=31000, QueueBufferDuration=797000, 
+11-20 23:42:21.390  1839  1862 I ActivityManager: Displayed com.twtrubiks.stockdesk/.MainActivity: +1s615ms
+11-20 23:42:21.395  3818  3818 I Choreographer: Skipped 46 frames!  The application may be doing too much work on its main thread.
+11-20 23:42:21.446  3818  3835 I OpenGLRenderer: Davey! duration=823ms; Flags=0, IntendedVsync=98553203307, Vsync=99319869943, OldestInputEvent=9223372036854775807, NewestInputEvent=0, HandleInputStart=99325515447, AnimationStart=99325525007, PerformTraversalsStart=99325525240, DrawStart=99327619108, SyncQueued=99327625286, SyncStart=99327640774, IssueDrawCommandsStart=99327683421, SwapBuffers=99330920976, FrameCompleted=99376630511, DequeueBufferDuration=34000, QueueBufferDuration=176000, 
+11-20 23:42:21.533  1839  1898 I GnssLocationProvider: WakeLock acquired by sendMessage(REPORT_SV_STATUS, 0, com.android.server.location.GnssLocationProvider$SvStatusInfo@db9bda3)
+11-20 23:42:21.534  1839  1853 I GnssLocationProvider: WakeLock released by handleMessage(REPORT_SV_STATUS, 0, com.android.server.location.GnssLocationProvider$SvStatusInfo@db9bda3)
+11-20 23:42:21.594  1684  1709 W SurfaceFlinger: Attempting to set client state on removed layer: Splash Screen com.twtrubiks.stockdesk#0
+11-20 23:42:21.594  1684  1709 W SurfaceFlinger: Attempting to destroy on removed layer: Splash Screen com.twtrubiks.stockdesk#0
+11-20 23:42:21.681  1978  2213 D EGL_emulation: eglMakeCurrent: 0x717d22c3f000: ver 3 0 (tinfo 0x717d30b37000)
+11-20 23:42:21.896  1978  2213 I chatty  : uid=10013(com.android.systemui) RenderThread identical 4 lines
+11-20 23:42:21.931  1978  2213 D EGL_emulation: eglMakeCurrent: 0x717d22c3f000: ver 3 0 (tinfo 0x717d30b37000)
+11-20 23:42:22.235  1839  2416 V BackupManagerConstants: getFullBackupRequiredNetworkType(...) returns 2
+11-20 23:42:22.236  1839  2416 V BackupManagerConstants: getFullBackupRequireCharging(...) returns true
+11-20 23:42:22.530  1839  1898 I GnssLocationProvider: WakeLock acquired by sendMessage(REPORT_SV_STATUS, 0, com.android.server.location.GnssLocationProvider$SvStatusInfo@b31f01e)
+11-20 23:42:22.530  1839  1853 I GnssLocationProvider: WakeLock released by handleMessage(REPORT_SV_STATUS, 0, com.android.server.location.GnssLocationProvider$SvStatusInfo@b31f01e)
+11-20 23:42:22.587  3818  3818 I StockDesk: 先把內建瀏覽器的引擎開起來
+11-20 23:42:22.593  3818  3818 D GeckoThread: State changed to LAUNCHED
+11-20 23:42:22.594  3818  3818 D GeckoRuntime: Lifecycle: onCreate
+11-20 23:42:22.594  3818  3818 D GeckoRuntime: Lifecycle: onStart
+11-20 23:42:22.594  3818  3818 D GeckoRuntime: Lifecycle: onResume
+11-20 23:42:22.594  3818  3818 D GeckoNetworkManager: Incoming event start for state OffNoListeners -> OnNoListeners
+11-20 23:42:22.595  3818  3818 D GeckoNetworkManager: New network state: UP, WIFI, WIFI
+11-20 23:42:22.595  3818  3842 I GeckoThread: preparing to run Gecko
+11-20 23:42:22.597  3843  3843 W able_art_image: Unexpected CPU variant for X86 using defaults: x86_64
+11-20 23:42:22.599  1839  3800 I ActivityManager: Start proc 3843:com.twtrubiks.stockdesk:crashhelper_disable_art_image_/u0a67 for service com.twtrubiks.stockdesk/org.mozilla.gecko.crashhelper.CrashHelper
+11-20 23:42:22.600  1839  3800 D ConnectivityService: requestNetwork for uid/pid:10067/3818 NetworkRequest [ TRACK_DEFAULT id=12, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED Unwanted:  Uid: 10067] ]
+11-20 23:42:22.601  1839  1932 D WIFI    : got request NetworkRequest [ TRACK_DEFAULT id=12, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED Unwanted:  Uid: 10067] ] with score 60
+11-20 23:42:22.601  1839  1932 D WIFI_UT : got request NetworkRequest [ TRACK_DEFAULT id=12, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED Unwanted:  Uid: 10067] ] with score 60
+11-20 23:42:22.601  2068  2068 D PhoneSwitcherNetworkRequstListener: got request NetworkRequest [ TRACK_DEFAULT id=12, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED Unwanted:  Uid: 10067] ] with score 60
+11-20 23:42:22.601  3818  3842 W linker  : Warning: "/data/app/com.twtrubiks.stockdesk-qLGEkJU-pIVfbCIY7ct3ng==/lib/x86_64/libmozglue.so" unused DT entry: unknown (type 0x24 arg 0x3c3e8) (ignoring)
+11-20 23:42:22.601  3818  3842 W linker  : Warning: "/data/app/com.twtrubiks.stockdesk-qLGEkJU-pIVfbCIY7ct3ng==/lib/x86_64/libmozglue.so" unused DT entry: unknown (type 0x23 arg 0x150) (ignoring)
+11-20 23:42:22.601  3818  3842 W linker  : Warning: "/data/app/com.twtrubiks.stockdesk-qLGEkJU-pIVfbCIY7ct3ng==/lib/x86_64/libmozglue.so" unused DT entry: unknown (type 0x25 arg 0x8) (ignoring)
+11-20 23:42:22.602  3818  3842 D GeckoThread: State changed to MOZGLUE_READY
+11-20 23:42:22.604  3818  3818 D GeckoNetworkManager: Incoming event receivedUpdate for state OnNoListeners -> OnNoListeners
+11-20 23:42:22.604  3818  3818 D GeckoNetworkManager: New network state: UP, WIFI, WIFI
+11-20 23:42:22.607  3843  3843 W linker  : Warning: "/data/app/com.twtrubiks.stockdesk-qLGEkJU-pIVfbCIY7ct3ng==/lib/x86_64/libcrashhelper.so" unused DT entry: unknown (type 0x24 arg 0x98958) (ignoring)
+11-20 23:42:22.607  3843  3843 W linker  : Warning: "/data/app/com.twtrubiks.stockdesk-qLGEkJU-pIVfbCIY7ct3ng==/lib/x86_64/libcrashhelper.so" unused DT entry: unknown (type 0x23 arg 0x758) (ignoring)
+11-20 23:42:22.607  3843  3843 W linker  : Warning: "/data/app/com.twtrubiks.stockdesk-qLGEkJU-pIVfbCIY7ct3ng==/lib/x86_64/libcrashhelper.so" unused DT entry: unknown (type 0x25 arg 0x8) (ignoring)
+11-20 23:42:22.607  3843  3843 W linker  : Warning: "/data/app/com.twtrubiks.stockdesk-qLGEkJU-pIVfbCIY7ct3ng==/lib/x86_64/libmozglue.so" unused DT entry: unknown (type 0x24 arg 0x3c3e8) (ignoring)
+11-20 23:42:22.607  3843  3843 W linker  : Warning: "/data/app/com.twtrubiks.stockdesk-qLGEkJU-pIVfbCIY7ct3ng==/lib/x86_64/libmozglue.so" unused DT entry: unknown (type 0x23 arg 0x150) (ignoring)
+11-20 23:42:22.607  3843  3843 W linker  : Warning: "/data/app/com.twtrubiks.stockdesk-qLGEkJU-pIVfbCIY7ct3ng==/lib/x86_64/libmozglue.so" unused DT entry: unknown (type 0x25 arg 0x8) (ignoring)
+11-20 23:42:22.621  3818  3842 D GeckoLoader: Library base=/data/app/com.twtrubiks.stockdesk-qLGEkJU-pIVfbCIY7ct3ng==/lib/x86_64
+11-20 23:42:22.621  3818  3842 W Settings: Setting animator_duration_scale has moved from android.provider.Settings.System to android.provider.Settings.Global, returning read-only global URI.
+11-20 23:42:22.622  3818  3842 D GeckoLoader: Library base=/data/app/com.twtrubiks.stockdesk-qLGEkJU-pIVfbCIY7ct3ng==/lib/x86_64
+11-20 23:42:22.622  3818  3842 E GeckoLibLoad: Load sqlite start
+11-20 23:42:22.623  3818  3842 W linker  : Warning: "/data/app/com.twtrubiks.stockdesk-qLGEkJU-pIVfbCIY7ct3ng==/lib/x86_64/libnss3.so" unused DT entry: unknown (type 0x24 arg 0x15538) (ignoring)
+11-20 23:42:22.623  3818  3842 W linker  : Warning: "/data/app/com.twtrubiks.stockdesk-qLGEkJU-pIVfbCIY7ct3ng==/lib/x86_64/libnss3.so" unused DT entry: unknown (type 0x23 arg 0x628) (ignoring)
+11-20 23:42:22.623  3818  3842 W linker  : Warning: "/data/app/com.twtrubiks.stockdesk-qLGEkJU-pIVfbCIY7ct3ng==/lib/x86_64/libnss3.so" unused DT entry: unknown (type 0x25 arg 0x8) (ignoring)
+11-20 23:42:22.623  3818  3842 E GeckoLibLoad: Load sqlite done
+11-20 23:42:22.623  3818  3842 D GeckoLoader: Library base=/data/app/com.twtrubiks.stockdesk-qLGEkJU-pIVfbCIY7ct3ng==/lib/x86_64
+11-20 23:42:22.623  3818  3842 E GeckoLibLoad: Load nss start
+11-20 23:42:22.623  3818  3842 E GeckoLibLoad: Load nss done
+11-20 23:42:22.623  3818  3842 D GeckoLoader: Library base=/data/app/com.twtrubiks.stockdesk-qLGEkJU-pIVfbCIY7ct3ng==/lib/x86_64
+11-20 23:42:22.624  3818  3842 W linker  : Warning: "/data/app/com.twtrubiks.stockdesk-qLGEkJU-pIVfbCIY7ct3ng==/lib/x86_64/libxul.so" unused DT entry: unknown (type 0x24 arg 0x69428) (ignoring)
+11-20 23:42:22.624  3818  3842 W linker  : Warning: "/data/app/com.twtrubiks.stockdesk-qLGEkJU-pIVfbCIY7ct3ng==/lib/x86_64/libxul.so" unused DT entry: unknown (type 0x23 arg 0x192a8) (ignoring)
+11-20 23:42:22.624  3818  3842 W linker  : Warning: "/data/app/com.twtrubiks.stockdesk-qLGEkJU-pIVfbCIY7ct3ng==/lib/x86_64/libxul.so" unused DT entry: unknown (type 0x25 arg 0x8) (ignoring)
+11-20 23:42:22.624  3818  3842 W linker  : Warning: "/data/app/com.twtrubiks.stockdesk-qLGEkJU-pIVfbCIY7ct3ng==/lib/x86_64/libgkcodecs.so" unused DT entry: unknown (type 0x24 arg 0x3150) (ignoring)
+11-20 23:42:22.624  3818  3842 W linker  : Warning: "/data/app/com.twtrubiks.stockdesk-qLGEkJU-pIVfbCIY7ct3ng==/lib/x86_64/libgkcodecs.so" unused DT entry: unknown (type 0x23 arg 0xa90) (ignoring)
+11-20 23:42:22.624  3818  3842 W linker  : Warning: "/data/app/com.twtrubiks.stockdesk-qLGEkJU-pIVfbCIY7ct3ng==/lib/x86_64/libgkcodecs.so" unused DT entry: unknown (type 0x25 arg 0x8) (ignoring)
+11-20 23:42:22.629  3818  3842 E GeckoLibLoad: Loaded libs in 5.582204ms total, 0ms(0ms) user, 0ms(10ms) system, 0(0) faults
+11-20 23:42:22.629  3818  3842 D GeckoThread: State changed to LIBS_READY
+11-20 23:42:22.629  3818  3842 W GeckoThread: zerdatime 100559 - runGecko
+11-20 23:42:22.675  3818  3842 I Gecko:DumpUtils: Fifo watcher disabled via pref.
+11-20 23:42:22.682  3818  3842 D GeckoThread: State changed to JNI_READY
+11-20 23:42:22.715  3818  3842 I GeckoConsole: No chrome package registered for chrome://browser/content/built_in_addons.json
+11-20 23:42:22.720  3818  3842 D GeckoThread: State changed to PROFILE_READY
+11-20 23:42:22.725  3818  3842 D GeckoThread: State changed to RUNNING
+11-20 23:42:22.771  3818  3818 W Gecko   : type=1400 audit(0.0:13): avc: denied { read } for name="product_name" dev="sysfs" ino=195 scontext=u:r:untrusted_app:s0:c67,c256,c512,c768 tcontext=u:object_r:sysfs:s0 tclass=file permissive=0
+11-20 23:42:22.779  3818  3818 I StockDesk: 從 AMO 安裝 uBlock Origin
+11-20 23:42:22.785  3818  3818 D GeckoNetworkManager: Incoming event enableNotifications for state OnNoListeners -> OnWithListeners
+11-20 23:42:22.785  3818  3818 D GeckoNetworkManager: New network state: UP, WIFI, WIFI
+11-20 23:42:22.785  1839  3800 W ActivityManager: Receiver with filter android.content.IntentFilter@8e9b1cd already registered for pid 3818, callerPackage is com.twtrubiks.stockdesk
+11-20 23:42:22.789  3818  3818 D GeckoNetworkManager: Incoming event receivedUpdate for state OnWithListeners -> OnWithListeners
+11-20 23:42:22.790  3818  3818 D GeckoNetworkManager: New network state: UP, WIFI, WIFI
+11-20 23:42:22.797  3818  3842 W linker  : Warning: "/data/app/com.twtrubiks.stockdesk-qLGEkJU-pIVfbCIY7ct3ng==/lib/x86_64/libsoftokn3.so" unused DT entry: unknown (type 0x24 arg 0x2350) (ignoring)
+11-20 23:42:22.797  3818  3842 W linker  : Warning: "/data/app/com.twtrubiks.stockdesk-qLGEkJU-pIVfbCIY7ct3ng==/lib/x86_64/libsoftokn3.so" unused DT entry: unknown (type 0x23 arg 0x80) (ignoring)
+11-20 23:42:22.797  3818  3842 W linker  : Warning: "/data/app/com.twtrubiks.stockdesk-qLGEkJU-pIVfbCIY7ct3ng==/lib/x86_64/libsoftokn3.so" unused DT entry: unknown (type 0x25 arg 0x8) (ignoring)
+11-20 23:42:22.798  3818  3842 W linker  : Warning: "/data/app/com.twtrubiks.stockdesk-qLGEkJU-pIVfbCIY7ct3ng==/lib/x86_64/libfreebl3.so" unused DT entry: unknown (type 0x24 arg 0xc78) (ignoring)
+11-20 23:42:22.798  3818  3842 W linker  : Warning: "/data/app/com.twtrubiks.stockdesk-qLGEkJU-pIVfbCIY7ct3ng==/lib/x86_64/libfreebl3.so" unused DT entry: unknown (type 0x23 arg 0x68) (ignoring)
+11-20 23:42:22.798  3818  3842 W linker  : Warning: "/data/app/com.twtrubiks.stockdesk-qLGEkJU-pIVfbCIY7ct3ng==/lib/x86_64/libfreebl3.so" unused DT entry: unknown (type 0x25 arg 0x8) (ignoring)
+11-20 23:42:23.346  1839  1958 E TaskPersister: File error accessing recents directory (directory doesn't exist?).
+11-20 23:42:23.530  1839  1898 I GnssLocationProvider: WakeLock acquired by sendMessage(REPORT_SV_STATUS, 0, com.android.server.location.GnssLocationProvider$SvStatusInfo@13b5a82)
+11-20 23:42:23.530  1839  1853 I GnssLocationProvider: WakeLock released by handleMessage(REPORT_SV_STATUS, 0, com.android.server.location.GnssLocationProvider$SvStatusInfo@13b5a82)
+11-20 23:42:23.630  3818  3842 I GeckoConsole: 1795218143630	addons.webextension.uBlock0@raymondhill.net	WARN	Loading extension 'uBlock0@raymondhill.net': Reading manifest: Warning processing permissions: Error processing permissions.2: Value "menus" must either: must either [must either [must either [be one of ["idle"], be one of ["activeTab"], be one of ["cookies"], be one of ["publicSuffix"], be one of ["scripting"], or be one of ["webRequest", "webRequestAuthProvider", "webRequestBlocking", "webRequestFilterResponse", "webRequestFilterResponse.serviceWorkerScript"]], must either [be one of ["mozillaAddons"], be one of ["geckoViewAddons", "nativeMessagingFromContent"], be one of ["activityLog"], be one of ["networkStatus"], or be one of ["telemetry"]], be one of ["alarms", "storage", "unlimitedStorage"], be one of ["declarativeNetRequestWithHostAccess"], be one of ["dns"], or be one of ["theme"]], must either [must either [be one of ["idle"], be one of ["activeTab"], be one of ["cookies"], be one of ["publicSuffix"], be one of ["scripting"], or be one
+11-20 23:42:23.631  3818  3842 I GeckoConsole: 1795218143631	addons.webextension.uBlock0@raymondhill.net	WARN	Loading extension 'uBlock0@raymondhill.net': Reading manifest: Warning processing commands: An unexpected property was found in the WebExtension manifest.
+11-20 23:42:24.040  3818  3818 D WebExtension: handleMessage GeckoView:WebExtension:InstallPrompt
+11-20 23:42:24.043  3818  3842 W GeckoEventDispatcher: No listener for GeckoView:WebExtension:OnInstalling
+11-20 23:42:24.081  3818  3842 W GeckoEventDispatcher: No listener for GeckoView:WebExtension:OnInstalled
+11-20 23:42:24.082  3818  3818 I StockDesk: uBlock Origin 1.76.6 可以用了
+11-20 23:42:24.090  3818  3842 D         : HostConnection::get() New Host Connection established 0x717d33ef38c0, tid 3842
+11-20 23:42:24.092  3818  3842 D EGL_emulation: eglCreateContext: 0x717d33f167a0: maj 3 min 0 rcv 3
+11-20 23:42:24.092  3818  3842 D EGL_emulation: eglMakeCurrent: 0x717d33f167a0: ver 3 0 (tinfo 0x717d33f64240)
+11-20 23:42:24.101  3818  3842 W VideoCapabilities: Unrecognized profile 4 for video/hevc
+11-20 23:42:24.103  3818  3842 I VideoCapabilities: Unsupported profile 4 for video/mp4v-es
+11-20 23:42:24.104  3818  3842 D HardwareCodecCapability: MIME support: SW audio/g711-mlaw
+11-20 23:42:24.104  3818  3842 D HardwareCodecCapability: MIME support: SW audio/mp4a-latm
+11-20 23:42:24.104  3818  3842 D HardwareCodecCapability: MIME support: SWE video/mp4v-es
+11-20 23:42:24.104  3818  3842 D HardwareCodecCapability: MIME support: SW audio/raw
+11-20 23:42:24.104  3818  3842 D HardwareCodecCapability: MIME support: SWE video/x-vnd.on2.vp8
+11-20 23:42:24.104  3818  3842 D HardwareCodecCapability: MIME support: SWE audio/amr-wb
+11-20 23:42:24.104  3818  3842 D HardwareCodecCapability: MIME support: SW audio/amr-wb
+11-20 23:42:24.104  3818  3842 D HardwareCodecCapability: MIME support: SW video/avc
+11-20 23:42:24.104  3818  3842 D HardwareCodecCapability: MIME support: SW audio/3gpp
+11-20 23:42:24.104  3818  3842 D HardwareCodecCapability: MIME support: SW audio/flac
+11-20 23:42:24.104  3818  3842 D HardwareCodecCapability: MIME support: SW video/hevc
+11-20 23:42:24.104  3818  3842 D HardwareCodecCapability: MIME support: SW video/3gpp
+11-20 23:42:24.104  3818  3842 D HardwareCodecCapability: MIME support: SW10B video/x-vnd.on2.vp9
+11-20 23:42:24.104  3818  3842 D HardwareCodecCapability: MIME support: SW video/mp4v-es
+11-20 23:42:24.104  3818  3842 D HardwareCodecCapability: MIME support: SW audio/vorbis
+11-20 23:42:24.104  3818  3842 D HardwareCodecCapability: MIME support: SW audio/gsm
+11-20 23:42:24.104  3818  3842 D HardwareCodecCapability: MIME support: SWE video/3gpp
+11-20 23:42:24.104  3818  3842 D HardwareCodecCapability: MIME support: SWE audio/3gpp
+11-20 23:42:24.104  3818  3842 D HardwareCodecCapability: MIME support: SWE video/avc
+11-20 23:42:24.104  3818  3842 D HardwareCodecCapability: MIME support: SWE audio/flac
+11-20 23:42:24.104  3818  3842 D HardwareCodecCapability: MIME support: SW audio/opus
+11-20 23:42:24.104  3818  3842 D HardwareCodecCapability: MIME support: SWE audio/mp4a-latm
+11-20 23:42:24.104  3818  3842 D HardwareCodecCapability: MIME support: SW audio/mpeg
+11-20 23:42:24.105  3818  3842 D HardwareCodecCapability: MIME support: SW audio/g711-alaw
+11-20 23:42:24.105  3818  3842 D HardwareCodecCapability: MIME support: SW video/x-vnd.on2.vp8
+11-20 23:42:24.105  3818  3842 D HardwareCodecCapability: MIME support: SW video/x-vnd.on2.vp9
+11-20 23:42:24.105  3818  3842 D HardwareCodecCapability: Found candidate encoder OMX.google.h264.encoder
+11-20 23:42:24.105  3818  3842 D HardwareCodecCapability: MIME support: SW audio/g711-mlaw
+11-20 23:42:24.105  3818  3842 D HardwareCodecCapability: MIME support: SW audio/mp4a-latm
+11-20 23:42:24.105  3818  3842 D HardwareCodecCapability: MIME support: SWE video/mp4v-es
+11-20 23:42:24.105  3818  3842 D HardwareCodecCapability: MIME support: SW audio/raw
+11-20 23:42:24.105  3818  3842 D HardwareCodecCapability: MIME support: SWE video/x-vnd.on2.vp8
+11-20 23:42:24.105  3818  3842 D HardwareCodecCapability: MIME support: SWE audio/amr-wb
+11-20 23:42:24.105  3818  3842 D HardwareCodecCapability: MIME support: SW audio/amr-wb
+11-20 23:42:24.105  3818  3842 D HardwareCodecCapability: MIME support: SW video/avc
+11-20 23:42:24.105  3818  3842 D HardwareCodecCapability: MIME support: SW audio/3gpp
+11-20 23:42:24.105  3818  3842 D HardwareCodecCapability: MIME support: SW audio/flac
+11-20 23:42:24.105  3818  3842 D HardwareCodecCapability: MIME support: SW video/hevc
+11-20 23:42:24.105  3818  3842 D HardwareCodecCapability: MIME support: SW video/3gpp
+11-20 23:42:24.105  3818  3842 D HardwareCodecCapability: MIME support: SW10B video/x-vnd.on2.vp9
+11-20 23:42:24.105  3818  3842 D HardwareCodecCapability: MIME support: SW video/mp4v-es
+11-20 23:42:24.105  3818  3842 D HardwareCodecCapability: MIME support: SW audio/vorbis
+11-20 23:42:24.105  3818  3842 D HardwareCodecCapability: MIME support: SW audio/gsm
+11-20 23:42:24.105  3818  3842 D HardwareCodecCapability: MIME support: SWE video/3gpp
+11-20 23:42:24.105  3818  3842 D HardwareCodecCapability: MIME support: SWE audio/3gpp
+11-20 23:42:24.105  3818  3842 D HardwareCodecCapability: MIME support: SWE video/avc
+11-20 23:42:24.105  3818  3842 D HardwareCodecCapability: MIME support: SWE audio/flac
+11-20 23:42:24.105  3818  3842 D HardwareCodecCapability: MIME support: SW audio/opus
+11-20 23:42:24.105  3818  3842 D HardwareCodecCapability: MIME support: SWE audio/mp4a-latm
+11-20 23:42:24.105  3818  3842 D HardwareCodecCapability: MIME support: SW audio/mpeg
+11-20 23:42:24.105  3818  3842 D HardwareCodecCapability: MIME support: SW audio/g711-alaw
+11-20 23:42:24.105  3818  3842 D HardwareCodecCapability: MIME support: SW video/x-vnd.on2.vp8
+11-20 23:42:24.105  3818  3842 D HardwareCodecCapability: MIME support: SW video/x-vnd.on2.vp9
+11-20 23:42:24.105  3818  3842 D HardwareCodecCapability: MIME support: SW audio/g711-mlaw
+11-20 23:42:24.105  3818  3842 D HardwareCodecCapability: MIME support: SW audio/mp4a-latm
+11-20 23:42:24.105  3818  3842 D HardwareCodecCapability: MIME support: SWE video/mp4v-es
+11-20 23:42:24.106  3818  3842 D HardwareCodecCapability: MIME support: SW audio/raw
+11-20 23:42:24.106  3818  3842 D HardwareCodecCapability: MIME support: SWE video/x-vnd.on2.vp8
+11-20 23:42:24.106  3818  3842 D HardwareCodecCapability: MIME support: SWE audio/amr-wb
+11-20 23:42:24.106  3818  3842 D HardwareCodecCapability: MIME support: SW audio/amr-wb
+11-20 23:42:24.106  3818  3842 D HardwareCodecCapability: MIME support: SW video/avc
+11-20 23:42:24.106  3818  3842 D HardwareCodecCapability: MIME support: SW audio/3gpp
+11-20 23:42:24.106  3818  3842 D HardwareCodecCapability: MIME support: SW audio/flac
+11-20 23:42:24.106  3818  3842 D HardwareCodecCapability: MIME support: SW video/hevc
+11-20 23:42:24.106  3818  3842 D HardwareCodecCapability: MIME support: SW video/3gpp
+11-20 23:42:24.106  3818  3842 D HardwareCodecCapability: MIME support: SW10B video/x-vnd.on2.vp9
+11-20 23:42:24.106  3818  3842 D HardwareCodecCapability: MIME support: SW video/mp4v-es
+11-20 23:42:24.106  3818  3842 D HardwareCodecCapability: MIME support: SW audio/vorbis
+11-20 23:42:24.106  3818  3842 D HardwareCodecCapability: MIME support: SW audio/gsm
+11-20 23:42:24.106  3818  3842 D HardwareCodecCapability: MIME support: SWE video/3gpp
+11-20 23:42:24.106  3818  3842 D HardwareCodecCapability: MIME support: SWE audio/3gpp
+11-20 23:42:24.106  3818  3842 D HardwareCodecCapability: MIME support: SWE video/avc
+11-20 23:42:24.106  3818  3842 D HardwareCodecCapability: MIME support: SWE audio/flac
+11-20 23:42:24.106  3818  3842 D HardwareCodecCapability: MIME support: SW audio/opus
+11-20 23:42:24.106  3818  3842 D HardwareCodecCapability: MIME support: SWE audio/mp4a-latm
+11-20 23:42:24.106  3818  3842 D HardwareCodecCapability: MIME support: SW audio/mpeg
+11-20 23:42:24.106  3818  3842 D HardwareCodecCapability: MIME support: SW audio/g711-alaw
+11-20 23:42:24.106  3818  3842 D HardwareCodecCapability: MIME support: SW video/x-vnd.on2.vp8
+11-20 23:42:24.106  3818  3842 D HardwareCodecCapability: MIME support: SW video/x-vnd.on2.vp9
+11-20 23:42:24.114  3818  3873 D ServiceAllocator: org.mozilla.gecko.process.GeckoChildProcessServices$gpu updateBindings: FOREGROUND priority, 0 importance, not connected pid, 3 successful binds, 0 failed binds, 0 successful unbinds
+11-20 23:42:24.115  3917  3917 W able_art_image: Unexpected CPU variant for X86 using defaults: x86_64
+11-20 23:42:24.121  1839  1856 I ActivityManager: Start proc 3917:com.twtrubiks.stockdesk:gpu_disable_art_image_/u0a67 for service com.twtrubiks.stockdesk/org.mozilla.gecko.process.GeckoChildProcessServices$gpu
+11-20 23:42:24.127  3917  3917 I ServiceChildProcess: onCreate, process name: com.twtrubiks.stockdesk:gpu_disable_art_image_
+11-20 23:42:24.128  3917  3917 D GeckoThread: State changed to LAUNCHED
+11-20 23:42:24.128  3917  3932 I GeckoThread: preparing to run Gecko
+11-20 23:42:24.130  3818  3842 I GeckoConsole: 1795218144130	addons.webextension.uBlock0@raymondhill.net	WARN	Loading extension 'uBlock0@raymondhill.net': Reading manifest: Warning processing permissions: Error processing permissions.2: Value "menus" must either: must either [must either [must either [be one of ["idle"], be one of ["activeTab"], be one of ["cookies"], be one of ["publicSuffix"], be one of ["scripting"], or be one of ["webRequest", "webRequestAuthProvider", "webRequestBlocking", "webRequestFilterResponse", "webRequestFilterResponse.serviceWorkerScript"]], must either [be one of ["mozillaAddons"], be one of ["geckoViewAddons", "nativeMessagingFromContent"], be one of ["activityLog"], be one of ["networkStatus"], or be one of ["telemetry"]], be one of ["alarms", "storage", "unlimitedStorage"], be one of ["declarativeNetRequestWithHostAccess"], be one of ["dns"], or be one of ["theme"]], must either [must either [be one of ["idle"], be one of ["activeTab"], be one of ["cookies"], be one of ["publicSuffix"], be one of ["scripting"], or be one
+11-20 23:42:24.130  3818  3842 I GeckoConsole: 1795218144130	addons.webextension.uBlock0@raymondhill.net	WARN	Loading extension 'uBlock0@raymondhill.net': Reading manifest: Warning processing commands: An unexpected property was found in the WebExtension manifest.
+11-20 23:42:24.133  3917  3932 W linker  : Warning: "/data/app/com.twtrubiks.stockdesk-qLGEkJU-pIVfbCIY7ct3ng==/lib/x86_64/libmozglue.so" unused DT entry: unknown (type 0x24 arg 0x3c3e8) (ignoring)
+11-20 23:42:24.133  3917  3932 W linker  : Warning: "/data/app/com.twtrubiks.stockdesk-qLGEkJU-pIVfbCIY7ct3ng==/lib/x86_64/libmozglue.so" unused DT entry: unknown (type 0x23 arg 0x150) (ignoring)
+11-20 23:42:24.133  3917  3932 W linker  : Warning: "/data/app/com.twtrubiks.stockdesk-qLGEkJU-pIVfbCIY7ct3ng==/lib/x86_64/libmozglue.so" unused DT entry: unknown (type 0x25 arg 0x8) (ignoring)
+11-20 23:42:24.133  3917  3932 D GeckoThread: State changed to MOZGLUE_READY
+11-20 23:42:24.134  3917  3932 D GeckoLoader: Library base=/data/app/com.twtrubiks.stockdesk-qLGEkJU-pIVfbCIY7ct3ng==/lib/x86_64
+11-20 23:42:24.134  3917  3932 D GeckoLoader: Library base=/data/app/com.twtrubiks.stockdesk-qLGEkJU-pIVfbCIY7ct3ng==/lib/x86_64
+11-20 23:42:24.134  3917  3932 E GeckoLibLoad: Load sqlite start
+11-20 23:42:24.135  3917  3932 W linker  : Warning: "/data/app/com.twtrubiks.stockdesk-qLGEkJU-pIVfbCIY7ct3ng==/lib/x86_64/libnss3.so" unused DT entry: unknown (type 0x24 arg 0x15538) (ignoring)
+11-20 23:42:24.135  3917  3932 W linker  : Warning: "/data/app/com.twtrubiks.stockdesk-qLGEkJU-pIVfbCIY7ct3ng==/lib/x86_64/libnss3.so" unused DT entry: unknown (type 0x23 arg 0x628) (ignoring)
+11-20 23:42:24.135  3917  3932 W linker  : Warning: "/data/app/com.twtrubiks.stockdesk-qLGEkJU-pIVfbCIY7ct3ng==/lib/x86_64/libnss3.so" unused DT entry: unknown (type 0x25 arg 0x8) (ignoring)
+11-20 23:42:24.135  3917  3932 E GeckoLibLoad: Load sqlite done
+11-20 23:42:24.135  3917  3932 D GeckoLoader: Library base=/data/app/com.twtrubiks.stockdesk-qLGEkJU-pIVfbCIY7ct3ng==/lib/x86_64
+11-20 23:42:24.135  3917  3932 E GeckoLibLoad: Load nss start
+11-20 23:42:24.135  3917  3932 E GeckoLibLoad: Load nss done
+11-20 23:42:24.135  3917  3932 D GeckoLoader: Library base=/data/app/com.twtrubiks.stockdesk-qLGEkJU-pIVfbCIY7ct3ng==/lib/x86_64
+11-20 23:42:24.136  3917  3932 W linker  : Warning: "/data/app/com.twtrubiks.stockdesk-qLGEkJU-pIVfbCIY7ct3ng==/lib/x86_64/libxul.so" unused DT entry: unknown (type 0x24 arg 0x69428) (ignoring)
+11-20 23:42:24.136  3917  3932 W linker  : Warning: "/data/app/com.twtrubiks.stockdesk-qLGEkJU-pIVfbCIY7ct3ng==/lib/x86_64/libxul.so" unused DT entry: unknown (type 0x23 arg 0x192a8) (ignoring)
+11-20 23:42:24.136  3917  3932 W linker  : Warning: "/data/app/com.twtrubiks.stockdesk-qLGEkJU-pIVfbCIY7ct3ng==/lib/x86_64/libxul.so" unused DT entry: unknown (type 0x25 arg 0x8) (ignoring)
+11-20 23:42:24.136  3917  3932 W linker  : Warning: "/data/app/com.twtrubiks.stockdesk-qLGEkJU-pIVfbCIY7ct3ng==/lib/x86_64/libgkcodecs.so" unused DT entry: unknown (type 0x24 arg 0x3150) (ignoring)
+11-20 23:42:24.136  3917  3932 W linker  : Warning: "/data/app/com.twtrubiks.stockdesk-qLGEkJU-pIVfbCIY7ct3ng==/lib/x86_64/libgkcodecs.so" unused DT entry: unknown (type 0x23 arg 0xa90) (ignoring)
+11-20 23:42:24.136  3917  3932 W linker  : Warning: "/data/app/com.twtrubiks.stockdesk-qLGEkJU-pIVfbCIY7ct3ng==/lib/x86_64/libgkcodecs.so" unused DT entry: unknown (type 0x25 arg 0x8) (ignoring)
+11-20 23:42:24.140  3917  3932 E GeckoLibLoad: Loaded libs in 5.315627ms total, 0ms(0ms) user, 0ms(10ms) system, 0(0) faults
+11-20 23:42:24.140  3917  3932 D GeckoThread: State changed to LIBS_READY
+11-20 23:42:24.141  3917  3932 W GeckoThread: zerdatime 102071 - runGecko
+11-20 23:42:24.146  3818  3842 D HardwareCodecCapability: Found candidate encoder OMX.google.vp8.encoder
+11-20 23:42:24.146  3818  3842 D HardwareCodecCapability: Found candidate decoder OMX.google.vp8.decoder
+11-20 23:42:24.148  3818  3818 D WebExtension: handleMessage GeckoView:BrowserAction:Update
+11-20 23:42:24.150  3917  3932 D GeckoThread: State changed to RUNNING
+11-20 23:42:24.158  3917  3940 D         : HostConnection::get() New Host Connection established 0x717d3a547a40, tid 3940
+11-20 23:42:24.159  3917  3940 I ConfigStore: android::hardware::configstore::V1_0::ISurfaceFlingerConfigs::hasWideColorDisplay retrieved: 0
+11-20 23:42:24.159  3917  3940 I ConfigStore: android::hardware::configstore::V1_0::ISurfaceFlingerConfigs::hasHDRDisplay retrieved: 0
+11-20 23:42:24.160  3917  3940 D EGL_emulation: eglCreateContext: 0x717d3a5e5cc0: maj 3 min 0 rcv 3
+11-20 23:42:24.161  3917  3940 D EGL_emulation: eglMakeCurrent: 0x717d3a5e5cc0: ver 3 0 (tinfo 0x717d325f4640)
+11-20 23:42:24.166  3917  3940 E eglCodecCommon: glUtilsParamSize: unknow param 0x00008caa
+11-20 23:42:24.166  3917  3940 E eglCodecCommon: glUtilsParamSize: unknow param 0x00008caa
+11-20 23:42:24.257  3818  3818 D WebExtension: handleMessage GeckoView:BrowserAction:Update
+11-20 23:42:24.258  3818  3818 I chatty  : uid=10067(com.twtrubiks.stockdesk) AndroidUI identical 3 lines
+11-20 23:42:24.258  3818  3818 D WebExtension: handleMessage GeckoView:BrowserAction:Update
+11-20 23:42:24.270  3818  3842 W GeckoEventDispatcher: No listener for GeckoView:WebExtension:OnReady
+11-20 23:42:24.284  3818  3842 E GeckoConsole: [JavaScript Error: "Native manifests are not supported on android" {file: "resource://gre/modules/NativeManifests.sys.mjs" line: 44}]
+11-20 23:42:24.284  3818  3842 E GeckoConsole: init@resource://gre/modules/NativeManifests.sys.mjs:44:15
+11-20 23:42:24.284  3818  3842 E GeckoConsole: lookupManifest@resource://gre/modules/NativeManifests.sys.mjs:205:17
+11-20 23:42:24.284  3818  3842 E GeckoConsole: lookupManagedStorage@chrome://extensions/content/parent/ext-storage.js:89:36
+11-20 23:42:24.284  3818  3842 E GeckoConsole: getManagedStorageManifestData@chrome://extensions/content/parent/ext-storage.js:104:20
+11-20 23:42:24.284  3818  3842 E GeckoConsole: get@chrome://extensions/content/parent/ext-storage.js:414:30
+11-20 23:42:24.284  3818  3842 E GeckoConsole: recvAPICall/result</</<@resource://gre/modules/ExtensionParent.sys.mjs:1315:16
+11-20 23:42:24.284  3818  3842 E GeckoConsole: withCallContextData@resource://gre/modules/ExtensionParent.sys.mjs:746:14
+11-20 23:42:24.284  3818  3842 E GeckoConsole: recvAPICall/result</<@resource://gre/modules/ExtensionParent.sys.mjs:1314:19
+11-20 23:42:24.284  3818  3842 E GeckoConsole: withPendingBrowser@resource://gre/modules/ExtensionParent.sys.mjs:756:26
+11-20 23:42:24.284  3818  3842 E GeckoConsole: recvAPICall/result<@resource://gre/modules/ExtensionParent.sys.mjs:1313:24
+11-20 23:42:24.284  3818  3842 E GeckoConsole: callAndLog@resource://gre/modules/ExtensionParent.sys.mjs:1266:14
+11-20 23:42:24.284  3818  3842 E GeckoConsole: recvAPICall@resource://gre/modules/ExtensionParent.sys.mjs:1312:25
+11-20 23:42:24.289  3818  3842 I chatty  : uid=10067(com.twtrubiks.stockdesk) AndroidUI identical 4 lines
+11-20 23:42:24.299  3818  3842 E GeckoConsole: [JavaScript Error: "Native manifests are not supported on android" {file: "resource://gre/modules/NativeManifests.sys.mjs" line: 44}]
+11-20 23:42:24.299  3818  3842 E GeckoConsole: init@resource://gre/modules/NativeManifests.sys.mjs:44:15
+11-20 23:42:24.299  3818  3842 E GeckoConsole: lookupManifest@resource://gre/modules/NativeManifests.sys.mjs:205:17
+11-20 23:42:24.299  3818  3842 E GeckoConsole: lookupManagedStorage@chrome://extensions/content/parent/ext-storage.js:89:36
+11-20 23:42:24.299  3818  3842 E GeckoConsole: getManagedStorageManifestData@chrome://extensions/content/parent/ext-storage.js:104:20
+11-20 23:42:24.299  3818  3842 E GeckoConsole: get@chrome://extensions/content/parent/ext-storage.js:414:30
+11-20 23:42:24.299  3818  3842 E GeckoConsole: recvAPICall/result</</<@resource://gre/modules/ExtensionParent.sys.mjs:1315:16
+11-20 23:42:24.299  3818  3842 E GeckoConsole: withCallContextData@resource://gre/modules/ExtensionParent.sys.mjs:746:14
+11-20 23:42:24.299  3818  3842 E GeckoConsole: recvAPICall/result</<@resource://gre/modules/ExtensionParent.sys.mjs:1314:19
+11-20 23:42:24.299  3818  3842 E GeckoConsole: withPendingBrowser@resource://gre/modules/ExtensionParent.sys.mjs:756:26
+11-20 23:42:24.299  3818  3842 E GeckoConsole: recvAPICall/result<@resource://gre/modules/ExtensionParent.sys.mjs:1313:24
+11-20 23:42:24.299  3818  3842 E GeckoConsole: callAndLog@resource://gre/modules/ExtensionParent.sys.mjs:1266:14
+11-20 23:42:24.299  3818  3842 E GeckoConsole: recvAPICall@resource://gre/modules/ExtensionParent.sys.mjs:1312:25
+11-20 23:42:24.530  1839  1898 I GnssLocationProvider: WakeLock acquired by sendMessage(REPORT_SV_STATUS, 0, com.android.server.location.GnssLocationProvider$SvStatusInfo@9d5b7da)
+11-20 23:42:24.530  1839  1853 I GnssLocationProvider: WakeLock released by handleMessage(REPORT_SV_STATUS, 0, com.android.server.location.GnssLocationProvider$SvStatusInfo@9d5b7da)
+11-20 23:42:25.439  1684  1866 E SurfaceFlinger: ro.sf.lcd_density must be defined as a build property
+11-20 23:42:25.439  1562  1562 D gralloc_ranchu: gralloc_alloc: Creating ashmem region of size 17973248
+11-20 23:42:25.460  3963  3963 D         : HostConnection::get() New Host Connection established 0x7c302962ee40, tid 3963
+11-20 23:42:25.530  1839  1898 I GnssLocationProvider: WakeLock acquired by sendMessage(REPORT_SV_STATUS, 0, com.android.server.location.GnssLocationProvider$SvStatusInfo@a9fe40b)
+11-20 23:42:25.531  1839  1853 I GnssLocationProvider: WakeLock released by handleMessage(REPORT_SV_STATUS, 0, com.android.server.location.GnssLocationProvider$SvStatusInfo@a9fe40b)
+11-20 23:42:25.647  3818  3965 D ProfileInstaller: Installing profile for com.twtrubiks.stockdesk
+11-20 23:42:25.748  3966  3966 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+11-20 23:42:25.750  3966  3966 I app_process: RelocateImage: /system/bin/patchoat --input-image-location=/system/framework/boot.art --output-image-directory=/data/local/tmp/dalvik-cache/x86_64 --instruction-set=x86_64 --base-offset-delta=14323712
+11-20 23:42:25.778  3818  3818 D GeckoNetworkManager: Incoming event enableNotifications for state OnWithListeners -> null
+11-20 23:42:25.778  3818  3818 W GeckoNetworkManager: Invalid event enableNotifications for state OnWithListeners
+11-20 23:42:25.957  3966  3966 W app_process: Unexpected CPU variant for X86 using defaults: x86_64
+11-20 23:42:25.964  3966  3966 I app_process: The ClassLoaderContext is a special shared library.
+11-20 23:42:25.966  3966  3966 I app_process: The ClassLoaderContext is a special shared library.
+11-20 23:42:25.980  3966  3966 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+11-20 23:42:25.988  1839  1839 V SettingsProvider: Notifying for 0: content://settings/secure/accessibility_enabled
+11-20 23:42:26.531  1839  1898 I GnssLocationProvider: WakeLock acquired by sendMessage(REPORT_SV_STATUS, 0, com.android.server.location.GnssLocationProvider$SvStatusInfo@e7bd57e)
+11-20 23:42:26.531  1839  1853 I GnssLocationProvider: WakeLock released by handleMessage(REPORT_SV_STATUS, 0, com.android.server.location.GnssLocationProvider$SvStatusInfo@e7bd57e)
+11-20 23:42:27.020  3966  3966 I AccessibilityNodeInfoDumper: Skipping invisible child: android.view.accessibility.AccessibilityNodeInfo@86af; boundsInParent: Rect(0, 0 - 0, 0); boundsInScreen: Rect(452, 2683 - 620, 2851); packageName: com.twtrubiks.stockdesk; className: android.view.View; text: null; error: null; maxTextLength: -1; contentDescription: null; tooltipText: null; viewIdResName: null; checkable: false; checked: false; focusable: false; focused: false; selected: false; clickable: false; longClickable: false; contextClickable: false; enabled: true; password: false; scrollable: false; importantForAccessibility: false; visible: false; actions: [AccessibilityAction: ACTION_ACCESSIBILITY_FOCUS - null]
+11-20 23:42:27.021  3966  3966 I AccessibilityNodeInfoDumper: Skipping invisible child: android.view.accessibility.AccessibilityNodeInfo@87c6; boundsInParent: Rect(0, 0 - 0, 0); boundsInScreen: Rect(819, 2683 - 987, 2851); packageName: com.twtrubiks.stockdesk; className: android.view.View; text: null; error: null; maxTextLength: -1; contentDescription: null; tooltipText: null; viewIdResName: null; checkable: false; checked: false; focusable: false; focused: false; selected: false; clickable: false; longClickable: false; contextClickable: false; enabled: true; password: false; scrollable: false; importantForAccessibility: false; visible: false; actions: [AccessibilityAction: ACTION_ACCESSIBILITY_FOCUS - null]
+11-20 23:42:27.021  3966  3966 I AccessibilityNodeInfoDumper: Skipping invisible child: android.view.accessibility.AccessibilityNodeInfo@88dd; boundsInParent: Rect(0, 0 - 0, 0); boundsInScreen: Rect(1186, 2683 - 1354, 2851); packageName: com.twtrubiks.stockdesk; className: android.view.View; text: null; error: null; maxTextLength: -1; contentDescription: null; tooltipText: null; viewIdResName: null; checkable: false; checked: false; focusable: false; focused: false; selected: false; clickable: false; longClickable: false; contextClickable: false; enabled: true; password: false; scrollable: false; importantForAccessibility: false; visible: false; actions: [AccessibilityAction: ACTION_ACCESSIBILITY_FOCUS - null]
+11-20 23:42:27.022  3966  3966 W AccessibilityNodeInfoDumper: Fetch time: 8ms
+11-20 23:42:27.026  1839  2125 W WindowManager: removeWindowToken: Attempted to remove non-existing token: android.os.Binder@f93e700
+11-20 23:42:27.026  1839  1839 V SettingsProvider: Notifying for 0: content://settings/secure/accessibility_enabled
+11-20 23:42:27.030  3966  3966 D AndroidRuntime: Shutting down VM
+11-20 23:42:27.116  1839  2584 I ActivityManager: Force stopping com.twtrubiks.stockdesk appid=10067 user=0: from pid 3985
+11-20 23:42:27.116  1839  2584 I ActivityManager: Killing 3843:com.twtrubiks.stockdesk:crashhelper_disable_art_image_/u0a67 (adj 100): stop com.twtrubiks.stockdesk
+11-20 23:42:27.116  1839  2584 W ActivityManager: Scheduling restart of crashed service com.twtrubiks.stockdesk/org.mozilla.gecko.crashhelper.CrashHelper in 1000ms
+11-20 23:42:27.118  1839  1857 W libprocessgroup: kill(-3843, 9) failed: No such process
+11-20 23:42:27.119  1839  2584 I ActivityManager: Killing 3917:com.twtrubiks.stockdesk:gpu_disable_art_image_/u0a67 (adj 0): stop com.twtrubiks.stockdesk
+11-20 23:42:27.119  1839  2584 W ActivityManager: Scheduling restart of crashed service com.twtrubiks.stockdesk/org.mozilla.gecko.process.GeckoChildProcessServices$gpu in 10996ms
+11-20 23:42:27.123  1839  2584 I ActivityManager: Killing 3818:com.twtrubiks.stockdesk/u0a67 (adj 0): stop com.twtrubiks.stockdesk
+11-20 23:42:27.123  1839  2584 W ActivityManager: Force removing ActivityRecord{9070a27 u0 com.twtrubiks.stockdesk/.MainActivity t7}: app died, no saved state
+11-20 23:42:27.129  2068  2068 D CarrierSvcBindHelper: No carrier app for: 0
+11-20 23:42:27.150  1685  1685 I Zygote  : Process 3843 exited due to signal (9)
+11-20 23:42:27.158  1562  1562 D gralloc_ranchu: gralloc_alloc: Creating ashmem region of size 17973248
+11-20 23:42:27.162  1839  1857 W libprocessgroup: kill(-3843, 9) failed: No such process
+11-20 23:42:27.162  1839  1857 I libprocessgroup: Successfully killed process cgroup uid 10067 pid 3843 in 43ms
+11-20 23:42:27.163  1562  1562 D gralloc_ranchu: gralloc_alloc: Creating ashmem region of size 17973248
+11-20 23:42:27.163  1839  1857 W libprocessgroup: kill(-3917, 9) failed: No such process
+11-20 23:42:27.163  1562  1562 D gralloc_ranchu: gralloc_alloc: Creating ashmem region of size 17973248
+11-20 23:42:27.170  1685  1685 I Zygote  : Process 3917 exited due to signal (9)

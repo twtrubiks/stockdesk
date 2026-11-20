@@ -1,0 +1,7 @@
+Starting: Intent { cmp=com.twtrubiks.stockdesk/.MainActivity }
+Status: ok
+Activity: com.twtrubiks.stockdesk/.MainActivity
+ThisTime: 1615
+TotalTime: 1615
+WaitTime: 1633
+Complete
