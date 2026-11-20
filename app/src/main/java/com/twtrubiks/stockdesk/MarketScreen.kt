@@ -28,17 +28,18 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 
-/** 大盤分頁裡的三頁。順序就是切換鈕的順序；國際指數是預設。 */
+/** 大盤分頁裡的四頁。順序就是切換鈕的順序；國際指數是預設。 */
 enum class MarketPage(val label: String, val tag: String) {
     INDICES("國際指數", "market_indices"),
     WEIGHTS("權重", "market_weights"),
     PUBLIC_BANK("官股", "market_public_bank"),
+    MARGIN("資券", "market_margin"),
 }
 
 /**
- * 大盤分頁：看整個市場的三頁，上面的切換鈕切換：國際指數（[IndicesPage]）、加權指數權重（[WeightsPage]）、
- * 八大官股買賣超（[PublicBankPage]，全市場與自選股）。選到哪一頁由 [StockDeskApp] 記著（切到別的分頁再回來、轉螢幕都還在）。
- * 標題列的重新整理三頁都有（抓的時候變成轉圈）。官股的抓取在 [FetchJobs]：別的抓取在跑時重新整理停用。
+ * 大盤分頁：看整個市場的四頁，上面的切換鈕切換：國際指數（[IndicesPage]）、加權指數權重（[WeightsPage]）、
+ * 八大官股買賣超（[PublicBankPage]，全市場）、信用交易統計（[MarginTotalsPage]，上市與上櫃的資券增減）。選到哪一頁由 [StockDeskApp] 記著（切到別的分頁再回來、轉螢幕都還在）。
+ * 標題列的重新整理每一頁都有（抓的時候變成轉圈）。官股、資券的抓取在 [FetchJobs]：別的抓取在跑時重新整理停用。
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -53,7 +54,13 @@ fun MarketScreen(page: MarketPage, onPage: (MarketPage) -> Unit, onSettings: () 
         TopAppBar(
             title = { Text("大盤") },
             actions = {
-                val spinning = if (page == MarketPage.PUBLIC_BANK) jobs.govBank is JobState.Running else loading[page] == true
+                val spinning = when (page) {
+                    MarketPage.PUBLIC_BANK -> jobs.govBank is JobState.Running
+                    MarketPage.MARGIN -> jobs.marginTotals is JobState.Running
+                    else -> loading[page] == true
+                }
+                // 這兩頁的抓取走 FetchJobs：一次只跑一個，別的在跑時不能按
+                val shared = page == MarketPage.PUBLIC_BANK || page == MarketPage.MARGIN
                 Box(Modifier.size(48.dp), contentAlignment = Alignment.Center) {
                     if (spinning) {
                         CircularProgressIndicator(Modifier.size(22.dp), strokeWidth = 2.5.dp)
@@ -62,8 +69,9 @@ fun MarketScreen(page: MarketPage, onPage: (MarketPage) -> Unit, onSettings: () 
                             MarketPage.INDICES -> "indices_refresh"
                             MarketPage.WEIGHTS -> "weights_refresh"
                             MarketPage.PUBLIC_BANK -> "gov_bank_refresh"
+                            MarketPage.MARGIN -> "margin_totals_refresh"
                         }
-                        IconButton(onClick = { refresh++ }, enabled = page != MarketPage.PUBLIC_BANK || !jobs.busy, modifier = Modifier.testTag(tag)) {
+                        IconButton(onClick = { refresh++ }, enabled = !shared || !jobs.busy, modifier = Modifier.testTag(tag)) {
                             Icon(painterResource(R.drawable.ic_refresh), contentDescription = "重新整理")
                         }
                     }
@@ -87,6 +95,7 @@ fun MarketScreen(page: MarketPage, onPage: (MarketPage) -> Unit, onSettings: () 
             MarketPage.INDICES -> IndicesPage(refresh, onLoading = { loading[MarketPage.INDICES] = it }, onOpen = onOpen)
             MarketPage.WEIGHTS -> WeightsPage(refresh, onLoading = { loading[MarketPage.WEIGHTS] = it })
             MarketPage.PUBLIC_BANK -> PublicBankPage(refresh, onOpen)
+            MarketPage.MARGIN -> MarginTotalsPage(refresh)
         }
     }
 }

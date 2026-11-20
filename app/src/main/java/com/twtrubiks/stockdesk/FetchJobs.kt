@@ -14,6 +14,7 @@ import com.twtrubiks.stockdesk.core.holders.HolderWeek
 import com.twtrubiks.stockdesk.core.holders.HoldersEvent
 import com.twtrubiks.stockdesk.core.margin.MarginDay
 import com.twtrubiks.stockdesk.core.margin.MarginEvent
+import com.twtrubiks.stockdesk.core.margin.MarketTotals
 import com.twtrubiks.stockdesk.core.model.Market
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
@@ -58,6 +59,14 @@ class FetchJobs(private val c: AppContainer) {
 
     /** 最近一次全市場抓完的結果（抓取中也留著）。 */
     var govBankResult by mutableStateOf<GovBank?>(null)
+        private set
+
+    /** 整個市場的信用交易統計（大盤的資券頁）。 */
+    var marginTotals by mutableStateOf<JobState<Unit>>(JobState.Idle)
+        private set
+
+    /** 最近一次抓完的結果：上市、上櫃各一份（抓取中也留著）。 */
+    var marginTotalsResult by mutableStateOf<List<MarketTotals>?>(null)
         private set
 
     /** 每抓完一檔的八大官股就加一：自選股分頁看到它變了就重讀快取（每檔底下那一行）。 */
@@ -246,6 +255,34 @@ class FetchJobs(private val c: AppContainer) {
                 govBank = JobState.Ready(r, cached = r.cached)
             } catch (e: Exception) {
                 govBank = JobState.Failed(e.message ?: e.javaClass.simpleName)
+            } finally {
+                busy = false
+            }
+        }
+    }
+
+    /**
+     * 整個市場的信用交易統計：先上市（證交所）再上櫃（櫃買），不平行。[force] 是標題列的重新整理；
+     * 否則快取裡有的那幾天不問（資券頁一進來就呼叫，大部分時候不連網）。兩邊各自成敗，原因在 [MarketTotals.note]。
+     * 看幾個交易日照設定（[AppContainer.marginTotalsDays]）。
+     */
+    fun fetchMarginTotals(force: Boolean) {
+        val days = c.marginTotalsDays.value
+        if (busy) return
+        busy = true
+        marginTotals = JobState.Running("上市（證交所）…")
+        current = c.scope.launch {
+            try {
+                val twse = c.margin.totals(Market.TWSE, days, force)
+                marginTotals = JobState.Running("上櫃（櫃買）…")
+                val tpex = c.margin.totals(Market.TPEX, days, force)
+                marginTotalsResult = listOf(twse, tpex)
+                marginTotals = JobState.Ready(Unit, cached = twse.cached && tpex.cached)
+            } catch (e: CancellationException) {
+                marginTotals = JobState.Idle
+                throw e
+            } catch (e: Exception) {
+                marginTotals = JobState.Failed(e.message ?: e.javaClass.simpleName)
             } finally {
                 busy = false
             }

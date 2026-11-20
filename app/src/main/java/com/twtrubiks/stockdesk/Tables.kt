@@ -43,6 +43,9 @@ import com.twtrubiks.stockdesk.core.govbank.GovBankMarket
 import com.twtrubiks.stockdesk.core.govbank.GovBankVia
 import com.twtrubiks.stockdesk.core.govbank.RankRow
 import com.twtrubiks.stockdesk.core.holders.HolderWeek
+import com.twtrubiks.stockdesk.core.margin.MarginTotal
+import com.twtrubiks.stockdesk.core.margin.MarketTotals
+import com.twtrubiks.stockdesk.core.model.Market
 
 // 抓回來的資料怎麼畫：融資融券、股東持股分級、八大官股的表格，與共用的小零件（漲跌色、等寬數字、表頭、標籤）。
 
@@ -409,6 +412,44 @@ private fun RankColumn(title: String, rows: List<RankRow>, modifier: Modifier = 
             Row(Modifier.fillMaxWidth().padding(top = 3.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text(r.name, Modifier.weight(1f), style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(fmtAmount(r.netAmount), style = numStyle(MaterialTheme.typography.bodySmall), color = changeColor(r.netAmount), maxLines = 1)
+            }
+        }
+    }
+}
+
+// --- 信用交易統計（整個市場） ----------------------------------------------------------
+
+/**
+ * 一個市場的信用交易統計：最新一天的「資減 6.94 億」「券減 14,415 張」（增是紅、減是綠），底下是最近幾天的表
+ * （融資餘額的億、融券餘額的張，各自底下一行小字是那天的增減）。沒有資料就不畫。
+ */
+@Composable
+fun MarginTotalsBox(totals: MarketTotals, modifier: Modifier = Modifier) {
+    val latest = totals.days.firstOrNull() ?: return
+    val (name, source) = when (totals.market) {
+        Market.TWSE -> "上市" to "證交所"
+        Market.TPEX -> "上櫃" to "櫃買"
+    }
+    Column(modifier.fillMaxWidth()) {
+        SectionCaption("$name・${rocDate(latest.date)}", source)
+        TableBox(Modifier.testTag("margin_totals_${totals.market.name.lowercase()}")) {
+            Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+                val big = numStyle(MaterialTheme.typography.titleLarge).copy(fontWeight = FontWeight.SemiBold)
+                Text(fmtFinTotal(latest), Modifier.weight(1f), style = big, color = changeColor(latest.amountChg.toDouble()), maxLines = 1)
+                Text(fmtShortTotal(latest), style = big, color = changeColor(latest.shortChg.toDouble()), maxLines = 1)
+            }
+            HeaderRow {
+                HeaderCell("日期", 1f, TextAlign.Start)
+                HeaderCell("融資餘額（億）", 1.6f)
+                HeaderCell("融券餘額（張）", 1.6f)
+            }
+            totals.days.forEachIndexed { i, d ->
+                if (i > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
+                Row(Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                    DateCell(d.date, 1f)
+                    ValueCell(MarginTotal.yi(d.amountBal), fmtSignedYi(d.amountChg), d.amountChg.toDouble(), 1.6f, bold = i == 0)
+                    ValueCell(fmt(d.shortBal), fmtSigned(d.shortChg), d.shortChg.toDouble(), 1.6f, bold = i == 0)
+                }
             }
         }
     }

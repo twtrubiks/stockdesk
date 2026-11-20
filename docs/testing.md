@@ -10,6 +10,9 @@
     測市場判斷、休市與「今天還沒公布」、快取命中、一邊沒回應、集保 token 串接與失效（重拿查詢頁再試一次）、權重一天一次與重抓失敗顯示舊的、國際指數 5 分鐘內讀快取與某個指數沒點時沿用舊的、
     八大官股的全市場與一檔各抓各的、「該公布的那天」（18:30 前後、還沒公布 10 分鐘內不再問）、沒回應／429／503 是 stop、HiStock 全市場抓不到不影響個股、
     blave 沒有的（上櫃）改抓 HiStock 個股頁並記住、兩邊都沒有、個股頁改版只記在那一檔、每個主機的節流
+  - 信用交易統計（大盤的資券頁）：`MarginTotalsTest`。解析吃 11/18 的真實回應（上市資減 6.94 億、券減 14,415 張；上櫃資減 32.18 億、券減 4,333 張）、
+    億的無條件捨去、「該公布的那天」（21:00 前後）、湊 3 個交易日與快取命中、重新整理才問今天、還沒公布 10 分鐘內不再問、假日記成休市、
+    沒回應顯示快取、抓個股時順手存統計、`margin_totals` 的讀寫
   - 解析：`MarginParseTest`、`HoldersParseTest`、`WeightsParseTest`、`IndicesParseTest`（Yahoo 的真實回應 `yahoo-spark.json`）、
     `GovBankParseTest`（blave、HiStock 全市場與個股頁的真實回應）。名字有 `Real`／`formPage…`／`weekPage…` 的吃 fixture（不在就 `Assume` skip，不算失敗），
     其他用 `Samples` 測千分位、挑對表、15 級合併、健全檢查、壞掉的回應
@@ -27,7 +30,8 @@
 
 ## fixture（`core/src/test/resources/fixtures/`）
 
-雲端 VM 連不到證交所、櫃買、集保、期交所。**使用者說先不用錄**；要錄的時候在**使用者的電腦**上跑一次：
+雲端 VM 連不到證交所、櫃買、集保、期交所。融資融券的三份（`twse-margin-day.json`、`tpex-margin-day.json`、`twse-margin-total.json`）
+是 11/18 那天的；**集保、期交所的沒有**（沒有 fixture 的測試會 skip）。要錄的時候在**使用者的電腦**上跑一次：
 
 ```bash
 python tools/fixtures/fetch_fixtures.py
@@ -35,7 +39,7 @@ python tools/fixtures/fetch_fixtures.py
 
 抓下來的檔案與用途在該資料夾的 `README.md`。放進 repo 前：
 
-1. 對一次欄位順序，把 `MarginParseTest`、`HoldersParseTest` 裡的 TODO 換成對照官方網頁的具體數字
+1. 對一次欄位順序，把 `HoldersParseTest` 裡的 TODO 換成對照官方網頁的具體數字；重錄融資融券的話，`MarginParseTest`、`MarginTotalsTest` 裡 11/18 的數字與日期要跟著換
 2. 每個檔案 1 MB 以內
 
 ## 模擬器上的測試（CI）
@@ -55,7 +59,8 @@ APK 按 CPU 拆開（GeckoView），模擬器裝的是 `app-x86_64-debug.apk`／
   流程：自選股（加 2330、6515）→ goodinfo（2330 的融資融券・官股按「抓」，點開收著的持股分級再按「抓」，再按「全部抓取」：2330 全讀快取，6515 照順序抓假的櫃買、
   八大官股（6515 在 `FakeSources` 是上櫃，blave 回空的、改抓 HiStock 個股頁）與集保，
   跑完檢查 `FetchJobs` 的狀態（全部抓取 Ready、6515 上櫃 3 天且官股來自 HiStock、2 週），收起 2330 截 `05b-fetch-all`）→ 社群（點一檔開內建瀏覽器頁再關掉；看得到網站的標題，內容通常還沒畫出來）
-  → 大盤（國際指數 → 權重（進頁面自動抓）→ 官股（進頁面自動抓全市場））
+  → 大盤（國際指數 → 權重（進頁面自動抓）→ 官股（進頁面自動抓全市場）→ 資券（goodinfo 抓融資融券時順手存了幾天的統計，缺的進頁面抓；
+  等 `FetchJobs` 跑完，檢查上市、上櫃都是 3 個交易日、沒有錯誤，截 `11b-margin-totals`））
   → 自選股（每檔底下多一行官股）→ 設定。
   瀏覽器開在畫面上時 adb 的 `screencap` 可能卡住，流程裡開瀏覽器頁的那幾步不截圖
 - 假來源 `FakeSources`：模擬器上的 MockWebServer（綁 127.0.0.1），回 `Samples` 現造的回應（數字是假的；集保走 `FakeTdcc`，App 沒帶 cookie 就回空表）。`DemoRecordingTest` 在 `@Before` 裡
@@ -66,9 +71,9 @@ APK 按 CPU 拆開（GeckoView），模擬器裝的是 `app-x86_64-debug.apk`／
 
 ### testTag 一覽
 
-`tab_goodinfo`／`tab_forum`／`tab_market`／`tab_watchlist`（底部分頁）、`market_indices`／`market_weights`／`market_public_bank`（大盤的切換鈕）、`settings_button`、`code_input`／`add_button`／`candidates`／`rename_input`／`rename_confirm`（自選股）、
+`tab_goodinfo`／`tab_forum`／`tab_market`／`tab_watchlist`（底部分頁）、`market_indices`／`market_weights`／`market_public_bank`／`market_margin`（大盤的切換鈕）、`settings_button`、`code_input`／`add_button`／`candidates`／`rename_input`／`rename_confirm`（自選股）、
 `fetch_margin_<代號>`／`fetch_holders_<代號>`（goodinfo 卡片上的「抓」）、`gov_bank_link_<代號>`（融資融券・官股表格底下開官股網頁的那一行，有抓官股才有）、`holders_toggle_<代號>`（goodinfo 卡片的「股東持股分級」標題，點了所有卡片一起展開／收回）、`card_header_<代號>`（goodinfo 卡片的代號名稱列，點了收合／展開）、`expand_all`／`collapse_all`／`fetch_all`（goodinfo 標題列）、`fetch_all_progress`／`fetch_all_cancel`（全部抓取的進度與取消）、`margin_ratios`（設定頁「顯示資使用率、券資比」的勾選）、`forum_<代號>`（社群的每一列）、`gov_bank_market`（官股頁的全市場）、
-`gov_bank_histock`／`public_bank_all`／`public_bank_twse`／`public_bank_tpex`（官股頁最底下的網頁版）、`gov_line_<代號>`（自選股分頁每列底下的官股那一行）、`browser_close`／`browser_external`／`browser_web`／`ublock_button`／`ublock_badge`／`ublock_popup`（內建瀏覽器頁）、`weights_refresh`／`indices_refresh`／`gov_bank_refresh`（大盤標題列的重新整理）、`index_<代號去掉 ^>`（國際指數的卡片，例如 `index_TWII`）、`indices_yahoo`（在 Yahoo 股市看）。
+`gov_bank_histock`／`public_bank_all`／`public_bank_twse`／`public_bank_tpex`（官股頁最底下的網頁版）、`gov_line_<代號>`（自選股分頁每列底下的官股那一行）、`browser_close`／`browser_external`／`browser_web`／`ublock_button`／`ublock_badge`／`ublock_popup`（內建瀏覽器頁）、`weights_refresh`／`indices_refresh`／`gov_bank_refresh`／`margin_totals_refresh`（大盤標題列的重新整理）、`margin_totals_twse`／`margin_totals_tpex`（資券頁上市、上櫃的那一塊）、`index_<代號去掉 ^>`（國際指數的卡片，例如 `index_TWII`）、`indices_yahoo`（在 Yahoo 股市看）。
 
 ## 看 CI 的結果
 

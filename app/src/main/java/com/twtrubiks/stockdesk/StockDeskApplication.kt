@@ -62,6 +62,9 @@ class AppContainer(private val context: Context, val endpoints: Endpoints = Endp
     val marginDays = IntSetting(settings, "margin_days", 3)
     val holdersWeeks = IntSetting(settings, "holders_weeks", 2)
 
+    /** 大盤「資券」頁（整個市場的信用交易統計）看幾個交易日。 */
+    val marginTotalsDays = IntSetting(settings, "margin_totals_days", MarginSource.TOTALS_DAYS)
+
     /** 融資融券的表格要不要多顯示資使用率、券資比兩欄（預設不顯示）。 */
     val marginRatios = BoolSetting(settings, "margin_ratios", false)
 

@@ -28,7 +28,7 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
-/** 設定：深色模式；融資融券天數（3／5／10）與要不要顯示資使用率、券資比、持股分級週數（2／4／6）；內建瀏覽器的 uBlock Origin 狀態（只顯示，不能關）。 */
+/** 設定：深色模式；融資融券天數（3／5／10）與要不要顯示資使用率、券資比、持股分級週數（2／4／6）、大盤資券頁的天數（3／5／10）；內建瀏覽器的 uBlock Origin 狀態（只顯示，不能關）。 */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(onBack: () -> Unit) {
@@ -57,6 +57,9 @@ fun SettingsScreen(onBack: () -> Unit) {
             Text("股東持股分級：週數", Modifier.padding(top = 16.dp), style = MaterialTheme.typography.titleSmall)
             val weeks = listOf(2, 4, 6)
             Choices(weeks.map { "$it 週" to (c.holdersWeeks.value == it) }) { c.holdersWeeks.set(weeks[it]) }
+
+            Text("大盤的資券：交易日數", Modifier.padding(top = 16.dp), style = MaterialTheme.typography.titleSmall)
+            Choices(days.map { "$it 天" to (c.marginTotalsDays.value == it) }) { c.marginTotalsDays.set(days[it]) }
 
             // uBO 的版本與上次檢查更新的時間：看得到它有沒有自己更新（一天最多問一次 AMO）。
             // 只讀已經建好的，不為了顯示把瀏覽器引擎開起來

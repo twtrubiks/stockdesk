@@ -15,7 +15,7 @@ import org.junit.runner.RunWith
  * 錄影用的展示流程，CI 只錄這個 class，`scripts/ci/record.sh` 會在執行期間錄下整個螢幕。
  * 資料來源換成模擬器上的 [FakeSources]（MockWebServer，回 [com.twtrubiks.stockdesk.core.Samples] 造的假回應）。
  * 走自選股（加兩檔）→ goodinfo（2330 的融資融券・官股與持股分級按「抓」，再按「全部抓取」（2330 讀快取、6515 上櫃真的抓），全部收合再點 2330 展開）→ 社群（點一檔開內建瀏覽器頁，看得到網站的標題，內容通常還沒畫出來，再關掉）
- * → 大盤（國際指數 → 權重（進頁面自動抓）→ 官股（進頁面自動抓全市場））
+ * → 大盤（國際指數 → 權重（進頁面自動抓）→ 官股（進頁面自動抓全市場）→ 資券（上市、上櫃最近 3 個交易日的資券增減））
  * → 自選股（每檔底下多一行官股）→ 設定。全長控制在 150 秒內。
  */
 @RunWith(AndroidJUnit4::class)
@@ -115,7 +115,7 @@ class DemoRecordingTest : UiTest() {
         waitFor(res("tab_forum"))
         pause(1000)
 
-        // 大盤：預設是國際指數（假的 Yahoo，8 個指數，台股是盤中），再切到權重（今天沒抓過，進頁面就抓）、官股（進頁面就抓）
+        // 大盤：預設是國際指數（假的 Yahoo，8 個指數，台股是盤中），再切到權重（今天沒抓過，進頁面就抓）、官股（進頁面就抓）、資券
         find(res("tab_market")).click()
         waitFor(res("index_TWII"), timeout = 30_000)
         waitFor(res("index_DJI"))
@@ -130,6 +130,22 @@ class DemoRecordingTest : UiTest() {
         waitFor(res("gov_bank_market"), timeout = 30_000)
         pause(2000)
         screenshot("11-public-bank")
+        // 資券：整個市場的信用交易統計（上市、上櫃各一塊、最近 3 個交易日）。goodinfo 抓融資融券時順手存了那幾天的統計，
+        // 缺的進頁面才抓假的證交所（selectType=MS）、櫃買
+        find(res("market_margin")).click()
+        waitFor(res("margin_totals_twse"), timeout = 30_000)
+        waitFor(res("margin_totals_tpex"))
+        // 那兩塊先顯示快取，抓完才有 marginTotalsResult：等 FetchJobs 跑完再檢查
+        var waited = 0
+        while (container.jobs.marginTotals !is JobState.Ready && waited < 30_000) {
+            pause(100)
+            waited += 100
+        }
+        waitFor(By.text("資減 6.94 億"))
+        val totals = container.jobs.marginTotalsResult
+        assertTrue("資券：$totals", totals != null && totals.size == 2 && totals.all { it.note == null && it.days.size == 3 })
+        pause(2000)
+        screenshot("11b-margin-totals")
 
         // 自選股：每檔底下一行官股最新一天的買賣超（剛剛抓的快取）
         find(res("tab_watchlist")).click()

@@ -1,7 +1,7 @@
 # StockDesk
 
 看台股自選股的 Android App（Kotlin ＋ Jetpack Compose）：goodinfo 快速連結 ＋ 官方原始資料（融資融券、股東持股分級）、社群討論區（內建瀏覽器開網頁）、
-八大官股買賣超（HiStock、blave，非官方）、國際指數走勢（Yahoo，非官方）、加權指數權重；自選股自己加減。
+八大官股買賣超（HiStock、blave，非官方）、國際指數走勢（Yahoo，非官方）、加權指數權重、整個市場的信用交易統計（資券增減）；自選股自己加減。
 在 claude.ai/code 雲端 session 開發；VM 沒有模擬器，模擬器上的測試與錄影交給 GitHub Actions（`.github/workflows/record.yml`）。
 
 ## 文件
@@ -15,11 +15,10 @@
 
 ## 目前的進度
 
-功能都做了，VM 內 build 與 JVM 測試都過；還沒發第一個正式版。
+功能都做了，VM 內 build 與 JVM 測試都過；發過 v0.1.0、v0.2.0（GitHub Release）。
 
-- **還沒在手機上驗證**：集保持股分級（session cookie）、內建瀏覽器與 uBO 的安裝、八大官股。uBO 在 CI 模擬器的 logcat 看得到裝好，但沒有測試檢查
-- **還沒對過真實回應**：櫃買、集保的 HTML；權重只看過轉成文字的頁面（`Samples` 照同一份筆記造，擋不下欄位順序的錯）
-- 官方來源的 fixture 還沒錄（使用者說先不用，沒有 fixture 的測試會 skip）
+- **還沒對過真實回應**：集保的 HTML；權重只看過轉成文字的頁面（`Samples` 照同一份筆記造，擋不下欄位順序的錯）
+- fixture：融資融券（證交所、櫃買）有；集保、期交所沒有（沒有 fixture 的測試會 skip）
 
 ## 範圍
 
@@ -38,11 +37,11 @@ App 內更新股票名稱表；錄 fixture；換發版金鑰。
 
 ```
 app（Android、Compose）
-  GoodinfoScreen / ForumScreen / MarketScreen（IndicesPage・WeightsPage・PublicBankPage）/ WatchlistScreen / BrowserScreen（GeckoView ＋ uBO：BrowserTab、Ublock、BrowserRules）/ SettingsScreen
+  GoodinfoScreen / ForumScreen / MarketScreen（IndicesPage・WeightsPage・PublicBankPage・MarginTotalsPage）/ WatchlistScreen / BrowserScreen（GeckoView ＋ uBO：BrowserTab、Ublock、BrowserRules）/ SettingsScreen
   StockDeskApp（底部四個分頁 ＋ 一層蓋頁 Overlay）  FetchJobs（抓取狀態）  AndroidSql  AppContainer
       │ 只透過 core 的 source、store 與 model
 core（純 Kotlin，沒有 Android）
-  margin/   MarginSource：證交所 MI_MARGN、櫃買 margin/balance；一天一次全市場、只存自選股那幾列
+  margin/   MarginSource：證交所 MI_MARGN、櫃買 margin/balance；一天一次全市場、只存自選股那幾列；整個市場的信用交易統計（`totals`，資券頁）也在這裡、共用 Pacer
   holders/  HoldersSource：集保 qryStock；一檔一週、token 每發換新、要照順序串
   weights/  WeightsSource：期交所 futuresQADetail；整張表、一天一次
   indices/  IndicesSource：Yahoo v7/finance/spark；8 個國際指數最近一個交易日的 5 分鐘走勢，一發拿全部

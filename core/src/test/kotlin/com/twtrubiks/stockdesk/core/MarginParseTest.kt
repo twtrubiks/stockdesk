@@ -10,7 +10,7 @@ import org.junit.Test
 import java.time.LocalDate
 
 /**
- * 解析。名字有 `Real` 的吃錄好的真實回應（fixture 還沒錄之前會 skip）：欄位順序對不對只有它們說了算。
+ * 解析。名字有 `Real` 的吃錄好的真實回應（11/18；沒有 fixture 會 skip）：欄位順序對不對只有它們說了算。
  * `twseActual20261106` 是 2026-11-08 對過的證交所真實回應（欄名與 2330 那一列原樣，其他列省略）。
  * 其他用 [Samples] 造的回應，測休市、千分位、挑對表、壞掉的回應。
  */
@@ -64,7 +64,7 @@ class MarginParseTest {
 
     @Test
     fun tpexWrongColumnOrderIsCaughtByTheBalances() {
-        // 櫃買的欄位順序還沒對過真實回應：錯了要在手機上一抓就看得出來
+        // 櫃買的欄位順序錯了要一抓就看得出來
         val good = Samples.tpexMarginDay(date, (1..10).map { Samples.MarginRow("65${10 + it}", finPrev = 1_000L * it, finBal = 1_000L * it + 37, finLimit = 9_000, shortPrev = 50, shortBal = 41) })
         assertEquals(10, MarginSource.parseTpex(good, date)!!.size)
         // 把每一列的「資買」「資賣」對調
@@ -134,19 +134,29 @@ class MarginParseTest {
         assertThrows(MarginException::class.java) { MarginSource.parseTpex("""[]""", date) }
     }
 
+    /** 11/18 的真實回應。 */
+    private val nov18 = LocalDate.of(2026, 11, 18)
+
     @Test
     fun twseRealDay() {
-        val rows = MarginSource.parseTwse(Fixtures.require("twse-margin-day.json"), date)!!
+        val rows = MarginSource.parseTwse(Fixtures.require("twse-margin-day.json"), nov18)!!
         assertTrue("至少幾百檔", rows.size > 500)
-        // TODO fixture 錄好後：挑一檔對照網頁上的數字（餘額、限額、資使用率），確認欄位順序沒對錯
+        val tsmc = rows.getValue("2330")
+        assertEquals(listOf(1_070L, 578L, 90L, 32_826L, 33_228L, 6_483_092L), listOf(tsmc.finBuy, tsmc.finSell, tsmc.finRedeem, tsmc.finPrev, tsmc.finBal, tsmc.finLimit))
+        assertEquals(listOf(14L, 2L, 0L, 36L, 24L, 6_483_092L), listOf(tsmc.shortBuy, tsmc.shortSell, tsmc.shortRedeem, tsmc.shortPrev, tsmc.shortBal, tsmc.shortLimit))
+        assertEquals(6L, tsmc.offset)
+        assertEquals("2026-11-18", tsmc.date)
     }
 
     @Test
     fun tpexRealDay() {
-        val rows = MarginSource.parseTpex(Fixtures.require("tpex-margin-day.json"), date)!!
+        val rows = MarginSource.parseTpex(Fixtures.require("tpex-margin-day.json"), nov18)!!
         assertTrue(rows.size > 300)
-        val any = rows.values.first()
-        assertEquals(any.finBal - any.finPrev, any.finChg)
-        // TODO fixture 錄好後：挑一檔對照櫃買網頁的資使用率（端點直接給）
+        // 弘塑：前資餘額 325、資買 9、資賣 24、現償 0、資餘額 310、資使用率 4.07、資限額 7,603；券 11 → 11（賣 1、買 1）
+        val day = rows.getValue("3131")
+        assertEquals(listOf(325L, 9L, 24L, 0L, 310L, 7_603L), listOf(day.finPrev, day.finBuy, day.finSell, day.finRedeem, day.finBal, day.finLimit))
+        assertEquals(4.07, day.finUse!!, 0.001)
+        assertEquals(listOf(11L, 1L, 1L, 0L, 11L, 7_603L), listOf(day.shortPrev, day.shortSell, day.shortBuy, day.shortRedeem, day.shortBal, day.shortLimit))
+        assertEquals(0L, day.offset)
     }
 }

@@ -7,6 +7,7 @@ import com.twtrubiks.stockdesk.core.govbank.GovBankDay
 import com.twtrubiks.stockdesk.core.govbank.GovBankSource
 import com.twtrubiks.stockdesk.core.holders.HoldersSource
 import com.twtrubiks.stockdesk.core.margin.MarginDay
+import com.twtrubiks.stockdesk.core.margin.MarginTotal
 import com.twtrubiks.stockdesk.core.model.Market
 import com.twtrubiks.stockdesk.core.names.StockNames
 import com.twtrubiks.stockdesk.core.store.CacheStore
@@ -82,6 +83,15 @@ class DeviceTest {
         assertNull(cache.marginDayState(Market.TPEX, day))
         assertEquals(row, cache.marginRow(Market.TWSE, day, "2330"))
         assertNull(cache.marginRow(Market.TWSE, day, "2317")!!.finUse)
+
+        val total = MarginTotal(day.toString(), 8_986_680, 9_092_268, 207_959, 193_544, 508_721_448, 508_026_570)
+        cache.putMarginTotal(Market.TWSE, total.copy(date = day.minusDays(100).toString()), keepSince = day.minusDays(190))
+        cache.putMarginTotal(Market.TWSE, total.copy(date = day.minusDays(1).toString()), keepSince = day.minusDays(91))
+        cache.putMarginTotal(Market.TWSE, total.copy(shortBal = 1), keepSince = day.minusDays(90))
+        cache.putMarginTotal(Market.TWSE, total, keepSince = day.minusDays(90))
+        assertEquals(total, cache.marginTotal(Market.TWSE, day))
+        assertEquals(listOf(day, day.minusDays(1)).map { it.toString() }, cache.marginTotals(Market.TWSE, 5).map { it.date })
+        assertNull(cache.marginTotal(Market.TPEX, day))
 
         val week = HoldersSource.parseWeek(Samples.tdccWeek("t", listOf("20261106"), "20261106"), "20261106")!!
         cache.putHoldersWeek("2330", week)

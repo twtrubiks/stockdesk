@@ -3,6 +3,7 @@ package com.twtrubiks.stockdesk.core.store
 import com.twtrubiks.stockdesk.core.govbank.GovBankDay
 import com.twtrubiks.stockdesk.core.holders.HolderWeek
 import com.twtrubiks.stockdesk.core.margin.MarginDay
+import com.twtrubiks.stockdesk.core.margin.MarginTotal
 import com.twtrubiks.stockdesk.core.model.Market
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -14,6 +15,7 @@ import java.time.LocalDate
  * - 融資融券：來源一次回「一天、全市場」，但只存自選股的那幾列（整份一天約 0.4 MB，60 天就 24 MB，手機上不留）。
  *   `margin_days(market, date, closed)` 記這一天抓過了沒、是不是休市；`margin_rows(market, date, code, ...)` 是每檔那天的數字。
  *   某天抓過、但某檔沒有列（後來才加進自選股）→ 那天要重抓一次。
+ * - 信用交易統計（整個市場的資券增減）：`margin_totals(market, date, json)` 一個市場一天一筆，公布後不會變，只留最近 90 天。
  * - 股東持股分級：來源一次回「一檔、一週」，`holders_weeks(code, date, json)` 整筆存 JSON；公布後不會再變，永久有效。
  * - 權重：整張表（約 1,000 列）存 `weights(rank, code, name, weight)`，另記資料日期與抓取時間；一天只自動抓一次。
  * - 八大官股：來源一次回「一檔、最近 20 天」，`gov_bank_days(code, date, json)` 一天一筆（八家券商加起來），只留最近 90 天；
@@ -74,6 +76,16 @@ class CacheStore(private val sql: Sql) {
             )
             """.trimIndent(),
         )
+        sql.execute(
+            """
+            CREATE TABLE IF NOT EXISTS margin_totals (
+                market TEXT NOT NULL,
+                date TEXT NOT NULL,
+                json TEXT NOT NULL,
+                PRIMARY KEY (market, date)
+            )
+            """.trimIndent(),
+        )
         sql.execute("CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT NOT NULL)")
         // 每檔自選股在哪個市場（第一次抓融資融券時判斷出來的），之後不用再試兩邊
         sql.execute("CREATE TABLE IF NOT EXISTS markets (code TEXT PRIMARY KEY, market TEXT NOT NULL)")
@@ -99,6 +111,23 @@ class CacheStore(private val sql: Sql) {
                 market.name, date.toString(), code, json.encodeToString(row),
             )
         }
+    }
+
+    // --- 信用交易統計（整個市場） ------------------------------------------------------
+
+    fun marginTotal(market: Market, date: LocalDate): MarginTotal? =
+        sql.query("SELECT json FROM margin_totals WHERE market = ? AND date = ?", market.name, date.toString())
+            .firstOrNull()?.let { json.decodeFromString<MarginTotal>(it.string("json")) }
+
+    /** 一個市場最近 [limit] 天（新到舊）。 */
+    fun marginTotals(market: Market, limit: Int): List<MarginTotal> =
+        sql.query("SELECT json FROM margin_totals WHERE market = ? ORDER BY date DESC LIMIT ${limit.coerceAtLeast(1)}", market.name)
+            .map { json.decodeFromString<MarginTotal>(it.string("json")) }
+
+    /** 存一天（同一天覆蓋），順便刪掉這個市場 [keepSince] 以前的。 */
+    fun putMarginTotal(market: Market, total: MarginTotal, keepSince: LocalDate) = sql.transaction {
+        sql.execute("INSERT OR REPLACE INTO margin_totals (market, date, json) VALUES (?, ?, ?)", market.name, total.date, json.encodeToString(total))
+        sql.execute("DELETE FROM margin_totals WHERE market = ? AND date < ?", market.name, keepSince.toString())
     }
 
     fun market(code: String): Market? =

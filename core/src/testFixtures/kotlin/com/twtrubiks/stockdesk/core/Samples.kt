@@ -51,10 +51,37 @@ object Samples {
         "買進", "賣出", "現券償還", "前日餘額", "今日餘額", "次一營業日限額", "資券互抵", "註記",
     )
 
+    /**
+     * 整個市場一天的信用交易統計：融資、融券的前日／今日餘額（張）與融資金額（仟元）。
+     * 預設是證交所 2026-11-18 的真實數字（資減 6.94 億、券減 14,415 張）。
+     */
+    data class TotalRow(
+        val finPrev: Long = 8_986_680,
+        val finBal: Long = 9_092_268,
+        val shortPrev: Long = 207_959,
+        val shortBal: Long = 193_544,
+        val amountPrev: Long = 508_721_448,
+        val amountBal: Long = 508_026_570,
+    )
+
+    /** 證交所「信用交易統計」那張表：三列，買進、賣出、償還這裡用不到，填 0。 */
+    private fun twseSummary(date: LocalDate, t: TotalRow): String =
+        """{"title":"${roc(date)} 信用交易統計","fields":${arr(listOf("項目", "買進", "賣出", "現金(券)償還", "前日餘額", "今日餘額"))},"data":""" +
+            arr2(
+                listOf(
+                    listOf("融資(交易單位)", "0", "0", "0", n(t.finPrev), n(t.finBal)),
+                    listOf("融券(交易單位)", "0", "0", "0", n(t.shortPrev), n(t.shortBal)),
+                    listOf("融資金額(仟元)", "0", "0", "0", n(t.amountPrev), n(t.amountBal)),
+                ),
+            ) + "}"
+
+    /** 證交所 MI_MARGN `selectType=MS`：只有「信用交易統計」那張表，後面跟一個空的。 */
+    fun twseMarginTotal(date: LocalDate, total: TotalRow = TotalRow()): String =
+        """{"stat":"OK","date":"${Taipei.ymd(date)}","tables":[${twseSummary(date, total)},{}]}"""
+
     /** 證交所 MI_MARGN 有開市的一天：第一張是「信用交易統計」（不是個股），第二張才是個股。 */
-    fun twseMarginDay(date: LocalDate, rows: List<MarginRow>): String {
-        val summary = """{"title":"${roc(date)} 信用交易統計","fields":${arr(listOf("項目", "買進", "賣出", "現金(券)償還", "前日餘額", "今日餘額"))},""" +
-            """"data":[["融資(交易單位)","281,234","265,345","3,012","7,654,321","7,667,198"]]}"""
+    fun twseMarginDay(date: LocalDate, rows: List<MarginRow>, total: TotalRow = TotalRow()): String {
+        val summary = twseSummary(date, total)
         val data = rows.map { r ->
             listOf(
                 r.code, r.name, n(r.fb), n(r.fs), n(r.finRedeem), n(r.finPrev), n(r.finBal), n(r.finLimit),
@@ -73,9 +100,10 @@ object Samples {
         "前券餘額(張)", "券賣", "券買", "券償", "券餘額", "券屬證金", "券使用率(%)", "券限額", "資券相抵(張)", "備註",
     )
 
-    /** 櫃買 margin/balance 有開市的一天（資使用率端點直接給）。 */
-    fun tpexMarginDay(date: LocalDate, rows: List<MarginRow>): String = tpex(
+    /** 櫃買 margin/balance 有開市的一天（資使用率端點直接給）；底下的合計是 [total]。 */
+    fun tpexMarginDay(date: LocalDate, rows: List<MarginRow>, total: TotalRow = TotalRow()): String = tpex(
         date,
+        total,
         rows.map { r ->
             listOf(
                 r.code, r.name, n(r.finPrev), n(r.fb), n(r.fs), n(r.finRedeem), n(r.finBal), "0", pct(r.finBal, r.finLimit), n(r.finLimit),
@@ -85,10 +113,16 @@ object Samples {
     )
 
     /** 櫃買休市或還沒公布：`data` 是空陣列。 */
-    fun tpexClosed(date: LocalDate): String = tpex(date, emptyList())
+    fun tpexClosed(date: LocalDate): String = tpex(date, TotalRow(), emptyList())
 
-    private fun tpex(date: LocalDate, data: List<List<String>>) =
-        """{"stat":"ok","tables":[{"title":"上櫃股票融資融券餘額","date":"${Taipei.ymd(date)}","fields":${arr(TPEX_FIELDS)},"data":${arr2(data)}}]}"""
+    /** `summary`：「合計(張)」「融資金(仟元)」兩列，跟個股同樣的欄；休市是空陣列。 */
+    private fun tpex(date: LocalDate, t: TotalRow, data: List<List<String>>): String {
+        val lots = listOf("", "合計(張)", n(t.finPrev), "0", "0", "0", n(t.finBal), "", "", "", n(t.shortPrev), "0", "0", "0", n(t.shortBal), "", "", "", "", "")
+        val amount = listOf("", "融資金(仟元)", n(t.amountPrev), "0", "0", "0", n(t.amountBal)) + List(13) { "" }
+        val summary = if (data.isEmpty()) emptyList() else listOf(lots, amount)
+        return """{"date":"${Taipei.ymd(date)}","tables":[{"title":"上櫃股票融資融券餘額","date":"${Taipei.ymd(date)}","totalCount":${data.size},""" +
+            """"fields":${arr(TPEX_FIELDS)},"data":${arr2(data)},"summary":${arr2(summary)},"notes":[]}],"stat":"ok"}"""
+    }
 
     // --- 股東持股分級 --------------------------------------------------------------
 

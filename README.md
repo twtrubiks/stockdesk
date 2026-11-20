@@ -1,6 +1,6 @@
 # StockDesk
 
-看台股自選股的 Android App：goodinfo 快速連結與官方原始資料（融資融券、股東持股分級）、個股社群討論區、國際指數走勢、加權指數權重、八大官股買賣超。
+看台股自選股的 Android App：goodinfo 快速連結與官方原始資料（融資融券、股東持股分級）、個股社群討論區、國際指數走勢、加權指數權重、八大官股買賣超、整個市場的資券增減。
 自選股自己加減，匯出匯入 JSON 換手機也接得回來。
 
 ## 畫面
@@ -9,9 +9,13 @@
 |:-:|:-:|:-:|:-:|
 | <img src="docs/screenshots/goodinfo.png" width="200" alt="goodinfo 分頁：台積電的融資融券・官股與股東持股分級"> | <img src="docs/screenshots/goodinfo-collapsed.png" width="200" alt="goodinfo 分頁：卡片收合"> | <img src="docs/screenshots/forum.png" width="200" alt="社群分頁：個股討論區"> | <img src="docs/screenshots/watchlist.png" width="200" alt="自選股分頁：每一檔底下是官股最新一天的買賣超"> |
 
-| 大盤：國際指數 | 大盤：權重 | 大盤：官股 | 設定 |
+| 大盤：國際指數 | 大盤：權重 | 大盤：官股 | 大盤：資券 |
 |:-:|:-:|:-:|:-:|
-| <img src="docs/screenshots/indices.png" width="200" alt="大盤分頁：國際指數走勢"> | <img src="docs/screenshots/weights.png" width="200" alt="大盤分頁：加權指數權重"> | <img src="docs/screenshots/public-bank.png" width="200" alt="大盤分頁：八大官股全市場"> | <img src="docs/screenshots/settings.png" width="200" alt="設定"> |
+| <img src="docs/screenshots/indices.png" width="200" alt="大盤分頁：國際指數走勢"> | <img src="docs/screenshots/weights.png" width="200" alt="大盤分頁：加權指數權重"> | <img src="docs/screenshots/public-bank.png" width="200" alt="大盤分頁：八大官股全市場"> | <img src="docs/screenshots/margin-totals.png" width="200" alt="大盤分頁：上市、上櫃的資券增減與最近 3 個交易日"> |
+
+| 設定 |
+|:-:|
+| <img src="docs/screenshots/settings.png" width="200" alt="設定"> |
 
 截圖來自 CI 的 Android 9 模擬器（[`record.yml`](.github/workflows/record.yml)），資料來源換成假的，畫面上的數字是測試用的假資料。
 更新截圖：CI 跑完後執行 `scripts/readme-screenshots.sh`。
@@ -23,10 +27,11 @@
   股東持股分級一週才更新一次，預設收著（只剩一行摘要），點一下展開；收著時「全部抓取」不抓它。
   點代號名稱收合／展開，標題列可以一鍵全部展開、全部收合
 - **社群**：自選股每一檔一鍵開個股討論區網頁（內建瀏覽器頁），不用登入、不用 token
-- **大盤**：三頁切換
+- **大盤**：四頁切換
   - **國際指數**：台股加權、道瓊、S&P 500、NASDAQ、費半、日經 225、韓國 KOSPI、恆生最近一個交易日的走勢圖（Yahoo 的資料，非官方），手動重新整理
   - **權重**：加權指數成分股市值比重前 N 名（期交所，每月月底更新），進頁面時一天抓一次
   - **官股**：八大官股（八家公股券商）的買賣超：全市場當天買超還是賣超、多少（HiStock，非官方）與買超／賣超前 5 名。進頁面時當天的數字公布後抓一次；網頁版（HiStock、玩股網）在內建瀏覽器頁開
+  - **資券**：整個市場的信用交易統計（證交所、櫃買）：上市、上櫃當天「資減 6.94 億、券減 14,415 張」這樣的資券增減，與最近 3／5／10 個交易日（設定頁選，預設 3）。每個交易日晚上約 9 點公布後抓一次
 - **自選股**：打代號或名稱搜尋加入，刪、排順序、改名、匯出匯入；每一檔底下一行八大官股最新一天的買賣超
 - **內建瀏覽器**：用 GeckoView（Firefox 的引擎），內建 uBlock Origin 擋網頁上的廣告。uBlock Origin 不在 APK 裡，第一次啟動時從 Mozilla 附加元件網站下載安裝，之後一天最多檢查一次更新
 - 抓回來的資料存在手機上，離線也看得到上一次的結果；只有一個權限（網路）；App 本身沒有廣告、沒有遙測
@@ -35,11 +40,11 @@
 
 ## 現況
 
-功能都做了，模擬器上的測試都過；正在真機上實測，還沒發第一個正式版。進度與架構見 [`CLAUDE.md`](CLAUDE.md)。
+功能都做了，模擬器上的測試都過；發過 0.1.0、0.2.0。進度與架構見 [`CLAUDE.md`](CLAUDE.md)。
 
 ## 下載
 
-正式版會放在 [GitHub Release](../../releases/latest)（`stockdesk.apk`）。不上架 Google Play。
+正式版放在 [GitHub Release](../../releases/latest)（`stockdesk.apk`）。不上架 Google Play。
 
 ## 開發
 

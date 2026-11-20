@@ -10,11 +10,15 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import java.io.IOException
+import java.time.DayOfWeek
+import java.time.Instant
 import java.time.LocalDate
+import java.time.LocalTime
 
 /** 一檔某一天的融資融券。單位：張。`finUse` 資使用率 %、`ratio` 券資比 %，可能算不出來（餘額 0）。 */
 @Serializable
@@ -44,6 +48,47 @@ data class MarginDay(
 }
 
 class MarginException(message: String) : Exception(message)
+
+/**
+ * 整個市場某一天的信用交易統計（證交所「信用交易統計」那張表、櫃買個股表底下的合計）。
+ * 融資、融券的餘額單位是張（交易單位），融資金額是仟元。
+ */
+@Serializable
+data class MarginTotal(
+    val date: String,
+    val finPrev: Long,
+    val finBal: Long,
+    val shortPrev: Long,
+    val shortBal: Long,
+    val amountPrev: Long,
+    val amountBal: Long,
+) {
+    /** 融資金額的增減（仟元）＝ 今日餘額 − 前日餘額：「資增／資減 x 億」。來源說以同一天的前日餘額為準，不拿前一天的今日餘額來減。 */
+    val amountChg: Long get() = amountBal - amountPrev
+
+    /** 融券的增減（張）：「券增／券減 x 張」。 */
+    val shortChg: Long get() = shortBal - shortPrev
+
+    val finChg: Long get() = finBal - finPrev
+
+    companion object {
+        /**
+         * 仟元 → 億，兩位小數、**無條件捨去**（694,878 仟元是「6.94」，不是 6.95）、整數部分加千分位、不帶正負號。
+         * 用整數算（0.01 億 ＝ 1,000 仟元），不經過浮點數。
+         */
+        fun yi(thousands: Long): String {
+            val hundredths = Math.abs(thousands) / 1_000
+            val whole = (hundredths / 100).toString().reversed().chunked(3).joinToString(",").reversed()
+            return "$whole.${(hundredths % 100).toString().padStart(2, '0')}"
+        }
+    }
+}
+
+/**
+ * 大盤「資券」頁一個市場要顯示的：最近幾個交易日（新到舊）。[note] 是沒抓到（或沒抓完）的原因，這時 [days] 是快取裡的；
+ * [cached] 是這次完全沒連網。
+ */
+data class MarketTotals(val market: Market, val days: List<MarginTotal>, val note: String? = null, val cached: Boolean = true)
 
 /** 抓的過程中一步一步回報，畫面顯示進度；最後一個是 [Done]。 */
 sealed interface MarginEvent {
@@ -174,14 +219,88 @@ class MarginSource(
             val url = "$twseBase/rwd/zh/marginTrading/MI_MARGN?date=${Taipei.ymd(date)}&selectType=ALL&response=json"
             val r = http.get(url, headers)
             if (!r.ok) throw MarginException("證交所：HTTP ${r.code}")
-            parseTwse(r.body, date)
+            parseTwse(r.body, date)?.also { keepTotal(market, date) { parseTwseTotal(r.body, date) } }
         }
         Market.TPEX -> {
             tpexPacer.await()
             val url = "$tpexBase/www/zh-tw/margin/balance?date=${Taipei.slash(date)}&response=json"
             val r = http.get(url, headers)
             if (!r.ok) throw MarginException("櫃買：HTTP ${r.code}")
-            parseTpex(r.body, date)
+            parseTpex(r.body, date)?.also { keepTotal(market, date) { parseTpexTotal(r.body, date) } }
+        }
+    }
+
+    /** 抓個股那一天的全市場時，同一份回應裡就有整個市場的統計：順手存起來，「資券」頁就不用再問一次。統計讀不出來不影響個股。 */
+    private fun keepTotal(market: Market, date: LocalDate, parse: () -> MarginTotal?) {
+        val total = try {
+            parse()
+        } catch (e: MarginException) {
+            null
+        } ?: return
+        cache.putMarginTotal(market, total, keepSince = date.minusDays(TOTALS_KEEP_DAYS))
+    }
+
+    /**
+     * 整個市場最近 [days] 個交易日的信用交易統計（新到舊），大盤「資券」頁用。一天的數字公布後不會變，快取裡有就不問；
+     * 沒有的才一天一發（證交所 `selectType=MS` 只回統計那張，約 2 KB；櫃買沒有只回統計的參數，抓整份）。
+     *
+     * 從「該公布的那天」（[totalsDate]：平日 [TOTALS_PUBLISH_TIME] 以後是今天）往回找，週六日不問，最多看 [totalsLookbackDays] 個日曆日。
+     * [force]（重新整理）：還沒到公布時間也問今天，「今天還沒公布」的記憶（[TODAY_EMPTY_TTL]）也不看。
+     * 不丟例外：沒回應、格式不對都寫在 [MarketTotals.note]，[MarketTotals.days] 是快取裡最近的。
+     */
+    suspend fun totals(market: Market, days: Int = TOTALS_DAYS, force: Boolean = false): MarketTotals {
+        val wanted = days.coerceIn(1, TOTALS_MAX_DAYS)
+        val today = today()
+        var date = if (force) today else minOf(today, totalsDate(now()))
+        val oldest = date.minusDays(totalsLookbackDays(wanted))
+        val found = mutableListOf<MarginTotal>()
+        var net = false
+        try {
+            while (found.size < wanted && date >= oldest) {
+                val d = date
+                date = date.minusDays(1)
+                if (d.dayOfWeek == DayOfWeek.SATURDAY || d.dayOfWeek == DayOfWeek.SUNDAY) continue
+                val hit = cache.marginTotal(market, d)
+                if (hit != null) {
+                    found += hit
+                    continue
+                }
+                if (cache.marginDayState(market, d) == true) continue // 休市
+                val emptyAt = todayEmptyAt[market]
+                if (d == today && !force && emptyAt != null && now() - emptyAt < TODAY_EMPTY_TTL) continue
+                net = true
+                val total = fetchTotal(market, d)
+                if (total == null) {
+                    if (d == today) todayEmptyAt[market] = now() else cache.putMarginDay(market, d, closed = true, rows = emptyMap())
+                    continue
+                }
+                cache.putMarginTotal(market, total, keepSince = d.minusDays(TOTALS_KEEP_DAYS))
+                found += total
+            }
+            return MarketTotals(market, found, cached = !net)
+        } catch (e: MarginException) {
+            return MarketTotals(market, cache.marginTotals(market, wanted), e.message, cached = false)
+        } catch (e: IOException) {
+            val note = "${source(market)}沒回應，可能被限流，過一陣子再試（${e.message ?: e.javaClass.simpleName}）"
+            return MarketTotals(market, cache.marginTotals(market, wanted), note, cached = false)
+        }
+    }
+
+    /** 抓一天的統計。回 null 表示休市或還沒公布。 */
+    private suspend fun fetchTotal(market: Market, date: LocalDate): MarginTotal? = when (market) {
+        Market.TWSE -> {
+            twsePacer.await()
+            val url = "$twseBase/rwd/zh/marginTrading/MI_MARGN?date=${Taipei.ymd(date)}&selectType=MS&response=json"
+            val r = http.get(url, headers)
+            if (!r.ok) throw MarginException("證交所：HTTP ${r.code}")
+            parseTwseTotal(r.body, date)
+        }
+        Market.TPEX -> {
+            tpexPacer.await()
+            val url = "$tpexBase/www/zh-tw/margin/balance?date=${Taipei.slash(date)}&response=json"
+            val r = http.get(url, headers)
+            if (!r.ok) throw MarginException("櫃買：HTTP ${r.code}")
+            parseTpexTotal(r.body, date)
         }
     }
 
@@ -194,6 +313,89 @@ class MarginSource(
         const val MAX_DAYS = 60
         const val MAX_LOOKBACK_DAYS = 120
         const val TODAY_EMPTY_TTL = 10 * 60 * 1000L
+
+        /** 「資券」頁預設看幾個交易日、最多幾個（設定頁選 3／5／10）。 */
+        const val TOTALS_DAYS = 3
+        const val TOTALS_MAX_DAYS = 10
+
+        /** 平日幾點以後才把今天當成該公布的那天（證交所、櫃買通常晚上 9 點左右更新）。 */
+        val TOTALS_PUBLISH_TIME: LocalTime = LocalTime.of(21, 0)
+
+        /** 湊 [days] 個交易日往回最多看幾個日曆日（連假時不要一直往回打）：3 天 14、5 天 18、10 天 28。 */
+        fun totalsLookbackDays(days: Int): Long = maxOf(14L, days * 2L + 8)
+
+        /** 快取裡的統計只留這麼多天（日曆日）。 */
+        const val TOTALS_KEEP_DAYS = 90L
+
+        /** 統計「該公布的那天」：平日 [TOTALS_PUBLISH_TIME] 以後是今天，以前是前一個平日；週末是星期五。國定假日不知道，問了沒有就往回找。 */
+        fun totalsDate(now: Long): LocalDate {
+            val local = Instant.ofEpochMilli(now).atZone(Taipei.ZONE)
+            var d = local.toLocalDate()
+            if (local.toLocalTime() < TOTALS_PUBLISH_TIME) d = d.minusDays(1)
+            while (d.dayOfWeek == DayOfWeek.SATURDAY || d.dayOfWeek == DayOfWeek.SUNDAY) d = d.minusDays(1)
+            return d
+        }
+
+        /** 只讀快取、不連網：「資券」頁一進來先顯示這個。不用建 [MarginSource]（不會因此建立 OkHttpClient）。 */
+        fun cachedTotals(cache: CacheStore, days: Int = TOTALS_DAYS): List<MarketTotals> =
+            Market.entries.map { MarketTotals(it, cache.marginTotals(it, days)) }
+
+        /**
+         * 證交所 MI_MARGN 的「信用交易統計」（`selectType=MS` 只有這張，`ALL` 是 `tables[0]`）：
+         * `fields` 是「項目、買進、賣出、現金(券)償還、前日餘額、今日餘額」，三列「融資(交易單位)」「融券(交易單位)」「融資金額(仟元)」。
+         * 欄照欄名找、列照第一格找。休市（`stat` 不是 OK）回 null。
+         */
+        fun parseTwseTotal(body: String, date: LocalDate): MarginTotal? = parsing("證交所") {
+            val root = Json.parseToJsonElement(body).jsonObject
+            val stat = root["stat"]?.jsonPrimitive?.content ?: ""
+            if (NO_DATA_TWSE in stat) return@parsing null
+            if (stat != "OK") throw MarginException("證交所：stat=$stat")
+            val table = root["tables"]?.jsonArray?.mapNotNull { it as? JsonObject }
+                ?.firstOrNull { t -> t["fields"]?.jsonArray?.firstOrNull()?.jsonPrimitive?.content?.trim() == "項目" }
+                ?: throw MarginException("證交所：找不到「信用交易統計」那張表，格式可能改了")
+            val fields = table.getValue("fields").jsonArray.map { it.jsonPrimitive.content.trim() }
+            val prev = fields.indexOfFirst { "前日餘額" in it }
+            val bal = fields.indexOfFirst { "今日餘額" in it }
+            if (prev < 0 || bal < 0) throw MarginException("證交所：信用交易統計沒有前日餘額、今日餘額，格式可能改了。欄位：${fields.joinToString("、")}")
+            val rows = table["data"]?.jsonArray?.map { r -> r.jsonArray.map { it.jsonPrimitive.content.trim() } }.orEmpty()
+            fun row(vararg words: String) = rows.firstOrNull { r -> words.all { it in r[0] } }
+                ?: throw MarginException("證交所：信用交易統計裡找不到「${words.joinToString("")}」那一列，格式可能改了")
+            val fin = row("融資", "交易單位")
+            val short = row("融券", "交易單位")
+            val amount = row("融資金額")
+            checkTotal("證交所", MarginTotal(date.toString(), num(fin[prev]), num(fin[bal]), num(short[prev]), num(short[bal]), num(amount[prev]), num(amount[bal])))
+        }
+
+        /**
+         * 櫃買 margin/balance 的 `tables[0].summary`：兩列，跟個股那張表同樣的欄，
+         * 「合計(張)」有資、券的餘額，「融資金(仟元)」只有融資那幾欄。欄照 `fields` 的欄名找（前資餘額、資餘額、前券餘額、券餘額）。
+         * 休市（`data` 是空的）回 null。
+         */
+        fun parseTpexTotal(body: String, date: LocalDate): MarginTotal? = parsing("櫃買") {
+            val root = Json.parseToJsonElement(body).jsonObject
+            val stat = root["stat"]?.jsonPrimitive?.content ?: ""
+            if (!stat.equals("ok", ignoreCase = true)) throw MarginException("櫃買：stat=$stat")
+            val table = root["tables"]?.jsonArray?.firstOrNull()?.jsonObject ?: throw MarginException("櫃買：沒有 tables")
+            if (table["data"]?.jsonArray.isNullOrEmpty()) return@parsing null
+            val fields = table["fields"]?.jsonArray?.map { it.jsonPrimitive.content.trim() }.orEmpty()
+            fun col(name: String) = fields.indexOfFirst { it.startsWith(name) }.takeIf { it >= 0 }
+                ?: throw MarginException("櫃買：找不到「$name」那一欄，格式可能改了。欄位：${fields.joinToString("、")}")
+            val finPrev = col("前資餘額"); val finBal = col("資餘額"); val shortPrev = col("前券餘額"); val shortBal = col("券餘額")
+            val rows = table["summary"]?.jsonArray?.map { r -> r.jsonArray.map { it.jsonPrimitive.content.trim() } }.orEmpty()
+            fun row(word: String) = rows.firstOrNull { r -> r.take(2).any { word in it } }
+                ?: throw MarginException("櫃買：合計裡找不到「$word」那一列，格式可能改了")
+            val lots = row("合計")
+            val amount = row("融資金")
+            checkTotal("櫃買", MarginTotal(date.toString(), num(lots[finPrev]), num(lots[finBal]), num(lots[shortPrev]), num(lots[shortBal]), num(amount[finPrev]), num(amount[finBal])))
+        }
+
+        /** 餘額是 0（[num] 讀不出數字時回 0）就是欄位讀錯了：整個市場不會沒有融資、融券。 */
+        private fun checkTotal(source: String, t: MarginTotal): MarginTotal {
+            if (listOf(t.finPrev, t.finBal, t.shortPrev, t.shortBal, t.amountPrev, t.amountBal).any { it <= 0 }) {
+                throw MarginException("$source：信用交易統計的餘額讀不出來，格式可能改了")
+            }
+            return t
+        }
         private val headers = mapOf("User-Agent" to USER_AGENT, "Accept" to "application/json")
         private const val NO_DATA_TWSE = "沒有符合條件的資料"
 
@@ -235,7 +437,7 @@ class MarginSource(
 
         /**
          * 櫃買 margin/balance。`stat` 是 ok；`tables[0].data` 空陣列是休市。
-         * 欄位順序（實測筆記，**還沒對過真實回應**）：代號、名稱、前資餘額、資買、資賣、現償、資餘額、資屬證金、資使用率、資限額、
+         * 欄位順序：代號、名稱、前資餘額、資買、資賣、現償、資餘額、資屬證金、資使用率、資限額、
          * 前券餘額、券賣、券買、券償、券餘額、券屬證金、券使用率、券限額、資券相抵、備註。
          * 順序錯了 [checkBalances] 會擋下來（餘額對不起來），錯誤訊息裡有實際的欄名。
          */

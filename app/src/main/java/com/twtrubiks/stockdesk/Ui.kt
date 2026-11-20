@@ -12,6 +12,7 @@ import androidx.compose.ui.unit.dp
 import com.twtrubiks.stockdesk.core.govbank.GovBankDay
 import com.twtrubiks.stockdesk.core.http.Taipei
 import com.twtrubiks.stockdesk.core.indices.IndexDay
+import com.twtrubiks.stockdesk.core.margin.MarginTotal
 import java.time.Instant
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -79,6 +80,29 @@ fun govBankSide(amount: Double): String = when {
 /** 自選股分頁每列底下那一行：「官股 11/09 買超 +21.32 億・+955 張」。 */
 fun govBankLine(day: GovBankDay): String =
     "官股 ${shortDate(day.date)} ${govBankSide(day.netAmount)} ${fmtAmount(day.netAmount)}・${fmtSigned(day.netLots)} 張"
+
+/** 「2026-11-18」→「115/11/18」（民國年，證交所、櫃買的寫法）。 */
+fun rocDate(iso: String): String =
+    if (iso.length == 10) "${(iso.substring(0, 4).toIntOrNull() ?: return iso) - 1911}/${iso.substring(5, 7)}/${iso.substring(8, 10)}" else iso
+
+/** 增減的方向：「增」「減」「平」。 */
+private fun upDown(change: Long): String = when {
+    change > 0 -> "增"
+    change < 0 -> "減"
+    else -> "平"
+}
+
+/** 整個市場融資金額的增減：「資減 6.94 億」（億、兩位小數、無條件捨去，見 [MarginTotal.yi]）。 */
+fun fmtFinTotal(t: MarginTotal): String = "資${upDown(t.amountChg)} ${MarginTotal.yi(t.amountChg)} 億"
+
+/** 整個市場融券張數的增減：「券減 14,415 張」。 */
+fun fmtShortTotal(t: MarginTotal): String = "券${upDown(t.shortChg)} ${fmt(abs(t.shortChg))} 張"
+
+/** 帶正負號的億（仟元進來）：「-6.94」「+12.30」，捨去後是 0 就不帶號。 */
+fun fmtSignedYi(thousands: Long): String {
+    val yi = MarginTotal.yi(thousands)
+    return if (yi == "0.00") yi else (if (thousands > 0) "+" else "-") + yi
+}
 
 private val MONTH_DAY = DateTimeFormatter.ofPattern("MM/dd")
 private val HOUR_MINUTE = DateTimeFormatter.ofPattern("HH:mm")

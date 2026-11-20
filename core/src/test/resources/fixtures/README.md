@@ -6,8 +6,9 @@
 
 | 檔案 | 來源 | 用在 |
 | --- | --- | --- |
-| `twse-margin-day.json` | 證交所 `MI_MARGN`，某個交易日 | `MarginParseTest`、`MarginSource.parseTwse` 的欄位順序 |
-| `tpex-margin-day.json` | 櫃買 `margin/balance`，同一天 | `MarginParseTest`、`MarginSource.parseTpex` |
+| `twse-margin-day.json` | 證交所 `MI_MARGN?selectType=ALL`，11/18（130 KB） | `MarginParseTest`（`parseTwse` 的欄位順序）、`MarginTotalsTest`（第一張表就是統計） |
+| `tpex-margin-day.json` | 櫃買 `margin/balance`，同一天（107 KB） | `MarginParseTest`（`parseTpex`）、`MarginTotalsTest`（`summary` 的合計） |
+| `twse-margin-total.json` | 證交所 `MI_MARGN?selectType=MS`（只有「信用交易統計」那張），同一天 | `MarginTotalsTest`：資減 6.94 億、券減 14,415 張 |
 | `tdcc-form.html` | 集保 `qryStock` 的查詢頁（GET） | `HoldersParseTest`：token 與可查的週 |
 | `tdcc-week.html` | 集保 `qryStock` 查一檔一週的結果（POST） | `HoldersParseTest`：15 級表格 |
 | `taifex-weights.html` | 期交所 `futuresQADetail` | `WeightsParseTest` |
@@ -18,5 +19,6 @@
 
 錄好之後：
 
-1. 打開檔案對一次欄位順序，把 `MarginParseTest`、`HoldersParseTest` 裡的 `TODO` 換成具體數字的斷言（對照官方網頁上同一天的值）
+1. 打開檔案對一次欄位順序，把 `HoldersParseTest` 裡的 `TODO` 換成具體數字的斷言（對照官方網頁上同一天的值）；
+   重錄融資融券的三份時，`MarginParseTest`、`MarginTotalsTest` 裡 11/18 的數字與日期要跟著換
 2. 檔案不要太大（每個 1 MB 以內），證交所那份可以只留 `tables` 裡個股那張的前幾十列，但欄位 `fields` 要完整

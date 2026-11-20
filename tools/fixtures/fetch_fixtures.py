@@ -49,6 +49,13 @@ def margin(day: datetime.date) -> None:
     r.raise_for_status()
     save("twse-margin-day.json", r.text)
     time.sleep(2)
+    print("證交所 MI_MARGN（只有信用交易統計）")
+    r = requests.get("https://www.twse.com.tw/rwd/zh/marginTrading/MI_MARGN",
+                     params={"date": day.strftime("%Y%m%d"), "selectType": "MS", "response": "json"},
+                     headers={**UA, "Accept": "application/json"}, timeout=15)
+    r.raise_for_status()
+    save("twse-margin-total.json", r.text)
+    time.sleep(2)
     print("櫃買 margin/balance")
     r = requests.get("https://www.tpex.org.tw/www/zh-tw/margin/balance",
                      params={"date": day.strftime("%Y/%m/%d"), "response": "json"},

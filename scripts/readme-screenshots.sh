@@ -15,6 +15,7 @@ SHOTS=(
   "09-indices:indices"
   "10-weights:weights"
   "11-public-bank:public-bank"
+  "11b-margin-totals:margin-totals"
   "13-settings:settings"
 )
 
